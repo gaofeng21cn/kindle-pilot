@@ -74,23 +74,25 @@ Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重�
 
 ### 统一应用管理
 
-软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`，当前版本为 `0.1.0`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。
+软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`，当前版本为 `0.2.0`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记为 Package 能力模块。
 
 OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。当前是开发来源，可管理安装不等于已经发布 Stable 制品，也不代表当前设备、固件或阅读账号已验收。
 
 在支持原生插件管理的 Codex 中，可添加 `gaofeng21cn/kindle-pilot` marketplace 后安装该插件。需要验证本地源码时，可以把仓库路径作为 marketplace source。更新由同一 marketplace 更新和插件管理器完成；每次操作后用 `codex plugin list --json` 回读实际插件版本与启用状态。卸载只移除插件及其缓存，不删除 Kindle 上的书籍、插件、设备备份或用户任务文件。
 
-从已安装插件根目录或源码根目录读取软件信息：
+从已安装插件根目录或源码根目录读取软件信息和能力目录：
 
 ~~~sh
 PYTHONPATH=src python3 -m kindle_companion --json software-info
+PYTHONPATH=src python3 -m kindle_companion --json capabilities
 ~~~
 
-该入口只读取软件身份，`device_status=not_checked`；设备状态继续由原工作流检查。直接安装的 Python CLI 仍可单独使用，但它不是 Codex 插件安装记录。
+这两个入口只读取 Package 身份和标准能力目录，`device_status=not_checked`；设备状态继续由原工作流检查。能力模块和验收边界见[标准能力](docs/CAPABILITIES.md)。直接安装的 Python CLI 仍可单独使用，但它不是 Codex 插件安装记录。
 
 ### 开发入口
 
 - [Agent Skill](skills/kindle-pilot/SKILL.md)：如何接受请求、继续任务和交接触屏步骤。
+- [标准能力](docs/CAPABILITIES.md)：Package 能力模块、入口和权限边界。
 - [操作工作流](docs/WORKFLOW.md)：环境准备、命令行工具、传输和验收。
 - [原生合集](docs/NATIVE_COLLECTIONS.md)：整理策略、原生服务写入与实机验收。
 - [无线维护](docs/WIRELESS_MAINTENANCE.md)：临时密钥、MTP 准备、无线连接与会话关闭。

@@ -28,5 +28,8 @@ def software_info(root: Path) -> dict:
         "source_repo": manifest["source_repo"],
         "management_owner": carrier["kind"],
         "plugin_selector": carrier["plugin_selector"],
+        "capability_abi": manifest["capability_abi"],
+        "capability_catalog_ref": manifest["exports"]["capability_catalog_ref"],
+        "core_module_ids": manifest["exports"]["core_module_ids"],
         "device_status": "not_checked",
     }

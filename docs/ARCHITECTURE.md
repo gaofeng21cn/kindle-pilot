@@ -8,6 +8,7 @@
 - kindle_companion.mtp owns single-session MTP command construction and transfer error interpretation.
 - kindle_companion.wireless owns temporary SSH sessions, ephemeral client credentials, pinned server identities, source and duration limits. It does not grant collection-edit capability.
 - kindle_companion.collection_additions owns additive membership payloads, visibility-aware count checks, exact task-created collection retirement and whole-plan readback. The native Kindle service owns database mutations.
+- capabilities/kindle-pilot.json owns the exported KindlePilot capability-module catalog; `kindle_companion.capabilities` is its read-only discovery surface. Package exports and plugin presentation must match this catalog.
 - kindle_companion.collections owns the pinned KC headless adapter, indexed series inventory and cross-checking receipts against later snapshots. KC owns native mutation, backup, identity and pending-result checks; it accesses cc.db read-only and submits changes through the Kindle-local /change service.
 - The route's native_collections record owns the separately qualified native-collection support state. Jailbreak compatibility does not imply collection-edit compatibility.
 - The user owns Kindle-screen actions and account authentication.

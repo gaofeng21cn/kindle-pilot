@@ -1,0 +1,192 @@
+{
+  "schema": "kindle-pilot-capability-catalog/v1",
+  "package_id": "kindle-pilot",
+  "capability_abi": {
+    "id": "kindle-pilot.host.v1",
+    "version": "1.0.0",
+    "compatibility_policy": "same_major"
+  },
+  "modules": [
+    {
+      "id": "kindle-pilot.host.v1",
+      "title_i18n": {
+        "zh-CN": "KindlePilot 标准能力总入口",
+        "en-US": "KindlePilot capability host"
+      },
+      "kind": "aggregate",
+      "owner": "kindle_companion.capabilities",
+      "entrypoints": ["kindle-pilot capabilities"],
+      "transport": ["software_readonly"],
+      "route_binding": "capabilities/kindle-pilot.json#/modules",
+      "human_handoffs": [],
+      "authority": {
+        "can_discover_capabilities": true,
+        "can_access_device": false,
+        "can_write_device_files": false,
+        "can_claim_device_state": false
+      },
+      "evidence": ["package_identity", "capability_catalog_integrity"]
+    },
+    {
+      "id": "kindle.device.setup.v1",
+      "title_i18n": {
+        "zh-CN": "设备装机与兼容路线",
+        "en-US": "Device setup and compatibility"
+      },
+      "kind": "workflow",
+      "owner": "kindle_companion.compat",
+      "entrypoints": [
+        "kindle-pilot probe",
+      "kindle-pilot resolve-asset",
+        "kindle-pilot verify-asset"
+      ],
+      "transport": ["usb_mtp"],
+      "route_binding": "manifests/compatibility.json#/routes",
+      "human_handoffs": ["jailbreak_screen", "font_calibration", "device_reboot"],
+      "authority": {
+        "can_write_device_files": true,
+        "can_claim_jailbreak": false,
+        "can_claim_application_loaded": false,
+        "can_claim_account_login": false,
+        "can_delete_user_books": false
+      },
+      "evidence": ["exact_model_and_firmware", "asset_sha256", "mtp_readback", "user_screen_confirmation"]
+    },
+    {
+      "id": "kindle.mtp.transfer.v1",
+      "title_i18n": {
+        "zh-CN": "USB/MTP 文件传输",
+        "en-US": "USB/MTP transfer"
+      },
+      "kind": "transport",
+      "owner": "kindle_companion.mtp",
+      "entrypoints": ["scripts/kindle-mtp.py", "kindle_companion.mtp.MtpClient"],
+      "transport": ["usb_mtp"],
+      "route_binding": "macos_openmtp",
+      "human_handoffs": ["connect_usb", "disconnect_usb_when_requested"],
+      "authority": {
+        "can_write_device_files": true,
+        "can_execute_device_scripts_over_usb": false,
+        "can_claim_remote_readback": true,
+        "can_delete_user_books": false
+      },
+      "evidence": ["single_client_batch", "remote_path_readback", "storage_readback"]
+    },
+    {
+      "id": "kindle.reading.environment.v1",
+      "title_i18n": {
+        "zh-CN": "KOReader、月读与本地阅读",
+        "en-US": "KOReader, Moon, and local reading"
+      },
+      "kind": "workflow",
+      "owner": "skills/kindle-pilot/SKILL.md",
+      "entrypoints": ["manifests/compatibility.json#/routes[].manual_steps"],
+      "transport": ["usb_mtp", "kindle_screen"],
+      "route_binding": "manifests/compatibility.json#/routes[].assets",
+      "human_handoffs": ["kpm_command", "koreader_launch", "plugin_screen_check"],
+      "authority": {
+        "can_write_device_files": true,
+        "can_claim_application_loaded": false,
+        "can_claim_account_login": false,
+        "can_delete_user_books": false
+      },
+      "evidence": ["asset_sha256", "plugin_directory_readback", "user_opened_book"]
+    },
+    {
+      "id": "kindle.account.reading.v1",
+      "title_i18n": {
+        "zh-CN": "微信读书与番茄小说登录",
+        "en-US": "WeRead and Fanqie reading accounts"
+      },
+      "kind": "human_handoff",
+      "owner": "skills/kindle-pilot/SKILL.md",
+      "entrypoints": ["Moon account settings"],
+      "transport": ["kindle_screen", "phone_qr"],
+      "route_binding": "manifests/compatibility.json#/routes[].manual_steps",
+      "human_handoffs": ["phone_qr_login", "representative_book_open"],
+      "authority": {
+        "can_prepare_login": true,
+        "can_claim_account_login": false,
+        "can_read_account_cookies": false,
+        "can_store_qr_payload": false
+      },
+      "evidence": ["user_scan_confirmation", "account_shelf_readback", "chapter_opened"]
+    },
+    {
+      "id": "kindle.library.preservation.v1",
+      "title_i18n": {
+        "zh-CN": "原生书库与推送保留",
+        "en-US": "Native library and delivery preservation"
+      },
+      "kind": "policy",
+      "owner": "docs/NATIVE_COLLECTIONS.md",
+      "entrypoints": ["kindle-pilot status", "scripts/kindle-collections.py inspect"],
+      "transport": ["usb_mtp", "temporary_ssh_over_wifi"],
+      "route_binding": "docs/NATIVE_COLLECTIONS.md#验收",
+      "human_handoffs": ["native_library_reading_check"],
+      "authority": {
+        "can_preserve_native_files": true,
+        "can_move_user_books": false,
+        "can_cancel_subscriptions": false,
+        "can_delete_user_books": false
+      },
+      "evidence": ["original_memberships_preserved", "source_paths_preserved", "native_book_opened"]
+    },
+    {
+      "id": "kindle.native.collections.v1",
+      "title_i18n": {
+        "zh-CN": "原生合集整理",
+        "en-US": "Native collection organization"
+      },
+      "kind": "workflow",
+      "owner": "kindle_companion.collection_additions",
+      "entrypoints": [
+        "scripts/kindle-collections.py inspect",
+        "scripts/kindle-collection-additions.py preview",
+        "scripts/kindle-collection-additions.py rename-preview",
+        "scripts/kindle-collection-additions.py retire-preview",
+        "scripts/kindle-collection-additions.py apply"
+      ],
+      "transport": ["temporary_ssh_over_wifi"],
+      "route_binding": "manifests/compatibility.json#/routes[].native_collections",
+      "human_handoffs": ["review_collection_plan", "native_library_reading_check"],
+      "authority": {
+        "can_create_collections": true,
+        "can_add_members": true,
+        "can_rename_explicit_collections": true,
+        "can_retire_task_owned_collections": true,
+        "can_write_device_database_directly": false,
+        "can_delete_user_books": false
+      },
+      "evidence": ["visibility_aware_catalog", "read_only_backup", "native_change_readback", "original_memberships_preserved"]
+    },
+    {
+      "id": "kindle.wireless.maintenance.v1",
+      "title_i18n": {
+        "zh-CN": "临时无线维护",
+        "en-US": "Temporary wireless maintenance"
+      },
+      "kind": "transport",
+      "owner": "kindle_companion.wireless",
+      "entrypoints": [
+        "scripts/kindle-wireless.py prepare",
+        "scripts/kindle-wireless.py transfer",
+        "scripts/kindle-wireless.py connect",
+        "scripts/kindle-wireless.py discover",
+        "scripts/kindle-wireless.py stop"
+      ],
+      "transport": ["temporary_ssh_over_wifi", "usb_mtp"],
+      "route_binding": "manifests/compatibility.json#/routes[].wireless_maintenance",
+      "human_handoffs": ["open_wireless_launcher", "disconnect_usb_before_ssh"],
+      "assets": ["assets/wireless-cover.png"],
+      "authority": {
+        "can_open_temporary_ssh": true,
+        "can_bind_to_current_host": true,
+        "can_use_password_login": false,
+        "can_forward_ports": false,
+        "can_claim_collection_write": false
+      },
+      "evidence": ["ephemeral_keys", "host_key_pin", "identity_readback", "expiry_cleanup"]
+    }
+  ]
+}

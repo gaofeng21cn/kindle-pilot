@@ -1,7 +1,14 @@
 import copy
 import unittest
 
-from kindle_companion.collection_additions import prepare_addition, prepare_retirement, verify_addition, verify_retirement
+from kindle_companion.collection_additions import (
+    prepare_addition,
+    prepare_rename,
+    prepare_retirement,
+    verify_addition,
+    verify_rename,
+    verify_retirement,
+)
 from kindle_companion.models import CompanionError
 
 
@@ -78,6 +85,19 @@ class NativeAdditionsTests(unittest.TestCase):
         self.assertTrue(verify_retirement(before, after, prepared)["verified"])
         with self.assertRaises(CompanionError):
             prepare_retirement(before, target, {"old"}, {"book": {"old", "new"}})
+
+    def test_rename_is_compare_and_swap_and_preserves_graph(self):
+        before = catalog()
+        target = {"uuid": "old", "current_name": "原有隐藏合集", "name": "图书｜历史"}
+        prepared = prepare_rename(before, target)
+        self.assertEqual(prepared["payload"]["commands"][0]["update"]["titles"][0]["display"], "图书｜历史")
+        after = copy.deepcopy(before)
+        after["collections"][0]["name"] = "图书｜历史"
+        self.assertTrue(verify_rename(before, after, prepared)["verified"])
+        after["relations"] = []
+        self.assertFalse(verify_rename(before, after, prepared)["verified"])
+        with self.assertRaises(CompanionError):
+            prepare_rename(before, {"uuid": "old", "current_name": "错误名称", "name": "图书｜历史"})
 
 
 if __name__ == "__main__":

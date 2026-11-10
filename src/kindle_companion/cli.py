@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .capabilities import capability_info
 from .compat import decide_route
 from .discovery import discover
 from .manifest import load_manifest
@@ -46,6 +47,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("status", help="show persisted workflow state")
     sub.add_parser("software-info", help="read software identity without accessing a device or task")
+    sub.add_parser("capabilities", help="list package-owned KindlePilot capability modules")
 
     step = sub.add_parser("record-step", help="record a workflow observation")
     step.add_argument("step_id")
@@ -76,6 +78,10 @@ def main(argv: list[str] | None = None) -> int:
             from .software import software_info
 
             _emit(software_info(PROJECT_ROOT))
+            return 0
+
+        if args.command == "capabilities":
+            _emit(capability_info(PROJECT_ROOT))
             return 0
 
         if args.command == "probe":

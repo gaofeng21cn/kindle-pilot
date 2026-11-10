@@ -1,6 +1,6 @@
 # 无线维护
 
-无线维护是 KindlePilot 的可选传输层。MTP 用来准备入口和回读文件；用户断开 USB、点击原生入口后，Agent 通过临时 SSH 执行状态检查、备份和已验证的管理操作。无线连接和原生合集写入分别验收，支持状态记录在兼容清单的 `wireless_maintenance` 与 `native_collections.additions`。
+无线维护是标准能力 `kindle.wireless.maintenance.v1` 的可选传输层。MTP 用来准备入口和回读文件；用户断开 USB、点击原生入口后，Agent 通过临时 SSH 执行状态检查、备份和已验证的管理操作。无线连接和原生合集写入分别验收，支持状态记录在兼容清单的 `wireless_maintenance` 与 `native_collections.additions`。
 
 用户可以直接说：
 

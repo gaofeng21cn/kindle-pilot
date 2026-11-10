@@ -24,6 +24,8 @@ KindlePilot 已在 Colorsoft 5.20.1.0.2 实现原生合集的创建和新增归�
 
 - `export-sql`：准备只读索引查询，读取可见性、书籍归属与真实成员关系。
 - `preview`：基于明确的目标 UUID 和书籍 UUID 生成本地新增计划。
+- `rename-preview`：使用 UUID 与盘点时的当前名称生成只改标题的比较并交换计划。
+- `retire-preview`：根据任务创建记录、原有合集排除集和目的归属生成收敛计划。
 - `apply`：使用已核对身份的临时 SSH 会话，按合集备份、提交一次、连续回读。网络失败或结果未知时保留原任务并停止，不重发。
 
 ```sh
@@ -39,7 +41,11 @@ python3 scripts/kindle-collection-additions.py \
   --targets work/collections/targets.json --state-dir work/collections/run-1
 ```
 
+`apply --operation add` 是默认新增路径；重命名和任务合集收敛分别使用同样的绑定会话加 `--operation rename` 或 `--operation retire`。三种操作都保留请求、备份和连续回读，结果未知时不重发。
+
 目标文件结构为 `{"collections":[{"uuid":"准确合集UUID","name":"名称","book_uuids":["已索引书籍UUID"]}]}`。已有合集复用原 UUID，新建合集使用新 UUID。整理清单必须展示给用户；用户的整理请求决定允许的变更范围。
+
+重命名目标使用 `{"collections":[{"uuid":"准确合集UUID","current_name":"盘点时名称","name":"新名称"}]}`。收敛目标使用 `member_uuids`，并在同一文件提供 `original_collection_ids` 与每本书的 `destinations`；缺少目的归属或当前成员发生变化时，预览直接失败。
 
 ## 缩减本轮多余合集
 

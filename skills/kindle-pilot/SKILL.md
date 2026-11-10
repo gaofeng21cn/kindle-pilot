@@ -9,7 +9,7 @@ description: "管理 Kindle 装机、阅读配置和原生合集：USB/MTP 准�
 
 先定位 Kindle Pilot 仓库；单独安装了 Skill 但缺少工具时，读取或克隆 https://github.com/gaofeng21cn/kindle-pilot ，从仓库根目录运行工具。已有越狱设备的集合任务直接进入集合工作流，不重复越狱和阅读环境安装。
 
-通过 Codex 插件安装时，Skill、`src/`、`scripts/` 和兼容清单位于同一插件根目录；从当前 `SKILL.md` 向上两级定位根目录，优先使用这份已安装字节。`PYTHONPATH=src python3 -m kindle_companion --json software-info` 可只读核对 Package ID、显示名称和版本。安装、更新、启停与卸载交给宿主插件管理器；软件存在不代表 Kindle 已连接或某个业务步骤已完成。
+通过 Codex 插件安装时，Skill、`src/`、`scripts/`、`capabilities/` 和兼容清单位于同一插件根目录；从当前 `SKILL.md` 向上两级定位根目录，优先使用这份已安装字节。先运行 `PYTHONPATH=src python3 -m kindle_companion --json software-info` 和 `PYTHONPATH=src python3 -m kindle_companion --json capabilities`，只读核对 Package 身份、版本和标准能力模块。安装、更新、启停与卸载交给宿主插件管理器；软件存在不代表 Kindle 已连接或某个业务步骤已完成。
 
 ## 一句话入口
 
@@ -83,6 +83,8 @@ description: "管理 Kindle 装机、阅读配置和原生合集：USB/MTP 准�
 盘点按已索引 UUID 和准确路径匹配本机书籍，区分云端记录、原有集合和系列名无法识别的项目。此固件计数只统计可见合集；未知可见性不能称为损坏。不得因标题相同合并 UUID，也不能自动取消 KXO 订阅、删除边车或搬动推送文件。
 
 优先保留用户已有的来源和主题分组，例如 WNACG。册数较少的漫画放入综合漫画合集，只为较多册或用户重点追的长篇保留独立入口；不要把系列识别结果等量转换成合集。先形成可审阅的目标清单，再按用户已授权范围实施。清理本轮多余合集时，先核对成员已到达目标，再只撤销有创建证据的准确合集 UUID，不删除书籍。
+
+标准合集模块还提供 `scripts/kindle-collection-additions.py rename-preview` 和 `retire-preview`。重命名必须同时提交 UUID 与盘点时的当前名称，按比较并交换处理；收敛只能处理本任务创建且成员已经有目的归属的合集。每次写入都由原生服务执行，数据库只读，完成后回读成员、标题、可见性、书籍元数据和路径。
 
 实验测试只用一个新建 `KC-PROBE-*` 集合和一本未归类本机书籍。运行前列出目标和六步动作；先备份并验证，再由 Kindle 本地 `/change` 服务写入，数据库始终只读打开。结果不明时核对原任务及 pending 文件，不重新发新任务。回执中的 `confirmed` 需要与之后的设备快照交叉核对；完整六步、样本文件与边车、原有关系都通过才可更新适配状态。测试残留仅处理本次准确 UUID；设备端未验证的清理优先由用户在原生界面完成。
 

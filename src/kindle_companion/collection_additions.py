@@ -129,6 +129,62 @@ def verify_addition(before: dict[str, Any], after: dict[str, Any], prepared: dic
             "checks": checks, "verified": all(checks.values())}
 
 
+def prepare_rename(catalog: dict[str, Any], target: dict[str, Any]) -> dict[str, Any]:
+    """Prepare an exact compare-and-swap collection rename.
+
+    The caller must provide the UUID and the name observed in the same catalog
+    export. Renaming changes only the collection title; members, visibility,
+    books and source paths remain outside the write set.
+    """
+    _, shelves, _, _ = _index(catalog)
+    cid = target.get("uuid")
+    current_name = target.get("current_name")
+    name = target.get("name")
+    if (not isinstance(cid, str) or not cid or not isinstance(current_name, str)
+            or not isinstance(name, str) or not current_name.strip() or not name.strip()
+            or current_name == name or any(ord(c) < 32 for c in name)):
+        raise CompanionError("COLLECTION_RENAME_TARGET", "rename requires an observed current name and a different valid name")
+    shelf = shelves.get(cid)
+    if not shelf or shelf["name"] != current_name:
+        raise CompanionError("COLLECTION_RENAME_IDENTITY", "collection UUID or current name changed")
+    if any(c["uuid"] != cid and c["name"].casefold() == name.casefold() for c in shelves.values()):
+        raise CompanionError("COLLECTION_NAME", "another collection already uses the requested name")
+    payload = {
+        "commands": [{"update": {
+            "type": "Collection",
+            "uuid": cid,
+            "titles": [{"display": name, "direction": "LTR", "language": target.get("language", "zh_CN")}],
+        }}],
+        "type": "ChangeRequest",
+        "id": 1,
+        "caller": "KindlePilot",
+    }
+    return {"target": {"uuid": cid, "current_name": current_name, "name": name}, "payload": payload}
+
+
+def verify_rename(before: dict[str, Any], after: dict[str, Any], prepared: dict[str, Any]) -> dict[str, Any]:
+    old_books, old_shelves, old_members, old_memberships = _index(before)
+    books, shelves, members, memberships = _index(after)
+    target = prepared["target"]
+    cid = target["uuid"]
+    old_pairs = {(r["collection_uuid"], r["book_uuid"]) for r in before["relations"]}
+    new_pairs = {(r["collection_uuid"], r["book_uuid"]) for r in after["relations"]}
+    checks = {
+        "target_name": cid in shelves and shelves[cid]["name"] == target["name"],
+        "other_collection_names": all(c in shelves and (c == cid or shelves[c]["name"] == value["name"])
+                                       for c, value in old_shelves.items()),
+        "visibility_unchanged": all(c in shelves and shelves[c]["visible"] == value["visible"]
+                                     for c, value in old_shelves.items()),
+        "memberships_unchanged": new_pairs == old_pairs,
+        "collection_members_unchanged": all(c in members and members[c] == old_members[c] for c in old_members),
+        "book_metadata_unchanged": all(u in books and set(books[u]["collections"] or []) == old_memberships[u]
+                                        for u in old_books),
+        "book_paths_unchanged": all(u in books and books[u]["location"] == value["location"]
+                                     for u, value in old_books.items()),
+    }
+    return {"collection_uuid": cid, "name": target["name"], "checks": checks, "verified": all(checks.values())}
+
+
 def verify_organization(before: dict[str, Any], after: dict[str, Any], targets: list[dict[str, Any]]) -> dict[str, Any]:
     """Compare the whole authorized graph after several independent additions."""
     old_books, old_shelves, old_members, _ = _index(before)
