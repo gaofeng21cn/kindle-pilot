@@ -79,6 +79,7 @@
       "scripts/kindle-collection-additions.py",
       "scripts/kindle-collections.py",
       "scripts/kindle-mtp.py",
+      "scripts/kindle-reading-setup.py",
       "scripts/kindle-wireless.py",
       "skills/kindle-pilot/SKILL.md",
       "skills/kindle-pilot/agents/openai.yaml",
@@ -95,12 +96,13 @@
       "src/kindle_companion/mtp.py",
       "src/kindle_companion/pairing.py",
       "src/kindle_companion/plan.py",
+      "src/kindle_companion/reading_setup.py",
       "src/kindle_companion/software.py",
       "src/kindle_companion/state.py",
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:74c058715ec15e9836ff0ec2e781c410345ade6662f5bd97a1fd1aa10ada5c66"
+    "digest": "sha256:3651ffa88d338e99e87bb3e9b47e0a96989746020bb685464f4d75669bec9616"
   },
   "presentation": {
     "display_name_i18n": {

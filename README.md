@@ -11,15 +11,15 @@ Kindle Pilot 为你的 Agent 提供 Kindle 装机与管理所需的 Skill、工�
 3. 把下面这句话发给它：
 
 ~~~text
-请按 https://github.com/gaofeng21cn/kindle-pilot 的 README 和 Agent 指引，帮我配置已连接的 Kindle：保留原生书库，装好本地阅读、微信读书和番茄小说，需要我触屏或扫码时告诉我，完成后继续。
+请按 https://github.com/gaofeng21cn/kindle-pilot 的 README 和 Agent 指引，帮我配置已连接的 Kindle：保留原生书库，装好 KOReader、月读、微信读书和番茄小说，同时配置好以后的无线维护，需要我触屏或扫码时告诉我，完成后继续。
 ~~~
 
-无需先手动安装 Skill。Agent 会读取本仓库的 [Agent 指引](skills/kindle-pilot/SKILL.md)，检查电脑环境和设备兼容性，再下载材料并推进安装。完整固件版本需要你从 Kindle 的“设备信息”中提供。
+无需先手动安装 Skill。Agent 会读取本仓库的 [Agent 指引](skills/kindle-pilot/SKILL.md)，检查电脑环境和设备兼容性，再下载材料并推进安装。KOReader 可用后，月读、Kindle 书库插件和无线维护组件会在同一次 USB 连接中配置好。完整固件版本需要你从 Kindle 的“设备信息”中提供。
 
 已经安装 `kindle-pilot` Skill 的用户，可以直接说：
 
 ~~~text
-$kindle-pilot 帮我配置已连接的 Kindle，用来读本地图书、微信读书和番茄小说，并保留原生书库。
+$kindle-pilot 帮我配置已连接的 Kindle，用来读本地图书、微信读书和番茄小说，保留原生书库，并一并配置无线维护。
 ~~~
 
 在同一次对话里，按提示完成操作后回复“已连接”“设置好了”或“扫码成功”，Agent 会核对结果并继续。换一段对话时，告诉它上次的本地仓库或状态文件位置，就能接着检查已有进度。
@@ -33,7 +33,7 @@ $kindle-pilot 帮我配置已连接的 Kindle，用来读本地图书、微信�
 | 微信读书、番茄小说 | 按月读支持的书源配置登录，引导手机扫码，分别检查账号书架和章节阅读 |
 | 保留原生 Kindle | 保留图书馆和推送入口；旧推送的 KFX 漫画可继续用原生阅读器阅读，减少逐本转换 |
 | 原生合集管理 | 优先复用主题和来源合集，为多册长篇保留独立入口；当前 Colorsoft 已验证创建和新增归属 |
-| 临时无线维护 | USB 一次安装 KOReader 配对插件和独立配对服务；以后在 KOReader 显示配对码，Agent 通过临时 SSH 检查、备份与整理；默认 30 分钟自动关闭 |
+| 无线维护 | 首次装机时一并配置；以后在 Kindle 点开中文菜单，把 6 位纯数字码告诉 Agent，即可通过 Wi-Fi 检查、备份与整理；默认 30 分钟自动关闭 |
 | 日常维护 | 检查安装状态，定位 USB、传输和插件问题，按已有进度继续处理 |
 
 微信读书和番茄小说的可用情况取决于月读对应书源及平台接口，安装后分别以登录和实际打开书籍的结果确认。
@@ -59,6 +59,14 @@ Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重�
 型号、固件和安装材料以[兼容清单](manifests/compatibility.json)为准。未收录的设备或固件会先给出兼容性结论；新增路线需要核对上游资料和材料。
 
 ## 安装后继续使用
+
+无线维护配置并验收后，日常使用无需再插 USB。保持 Kindle 与电脑在同一局域网，在 KOReader 菜单点 **KindlePilot 无线维护 → 配对此电脑并开始维护**，然后对 Agent 说：
+
+~~~text
+$kindle-pilot 我的 Kindle 配对码是 005219，帮我检查阅读环境和书库。
+~~~
+
+配对码有效期为 120 秒，请保留开头的零。Agent 使用首次安装时保存在本机的设备配对记录连接，完成后主动关闭维护；每次连接都会生成新的临时客户端密钥。换一个对话时，提供之前的仓库或 `setup.json` 所在位置即可。安装与日常连接见[无线维护](docs/WIRELESS_MAINTENANCE.md)。
 
 在同一对话中，你可以继续说：
 
@@ -95,7 +103,7 @@ PYTHONPATH=src python3 -m kindle_companion --json capabilities
 - [标准能力](docs/CAPABILITIES.md)：Package 能力模块、入口和权限边界。
 - [操作工作流](docs/WORKFLOW.md)：环境准备、命令行工具、传输和验收。
 - [原生合集](docs/NATIVE_COLLECTIONS.md)：整理策略、原生服务写入与实机验收。
-- [无线维护](docs/WIRELESS_MAINTENANCE.md)：临时密钥、MTP 准备、无线连接与会话关闭。
+- [无线维护](docs/WIRELESS_MAINTENANCE.md)：首次装机集成、数字配对码、日常无线连接与会话关闭。
 - [兼容清单](manifests/compatibility.json)：已收录路线、上游地址、文件摘要和再分发策略。
 - [架构说明](docs/ARCHITECTURE.md)：状态和工具各自负责的内容。
 

@@ -79,10 +79,10 @@
         "en-US": "KOReader, Moon, and local reading"
       },
       "kind": "workflow",
-      "owner": "skills/kindle-pilot/SKILL.md",
-      "entrypoints": ["manifests/compatibility.json#/routes[].manual_steps"],
+      "owner": "kindle_companion.reading_setup",
+      "entrypoints": ["scripts/kindle-reading-setup.py prepare", "scripts/kindle-reading-setup.py transfer"],
       "transport": ["usb_mtp", "kindle_screen"],
-      "route_binding": "manifests/compatibility.json#/routes[].assets",
+      "route_binding": "manifests/compatibility.json#/routes[].reading_environment",
       "human_handoffs": ["kpm_command", "koreader_launch", "plugin_screen_check"],
       "authority": {
         "can_write_device_files": true,
@@ -90,7 +90,7 @@
         "can_claim_account_login": false,
         "can_delete_user_books": false
       },
-      "evidence": ["asset_sha256", "plugin_directory_readback", "user_opened_book"]
+      "evidence": ["asset_sha256", "single_write_batch_readback", "existing_configuration_preserved", "user_opened_book"]
     },
     {
       "id": "kindle.account.reading.v1",
@@ -167,8 +167,9 @@
         "en-US": "Temporary wireless maintenance"
       },
       "kind": "transport",
-      "owner": "kindle_companion.pairing + KindlePilot pairing daemon + KOReader SSH.koplugin",
+      "owner": "kindle_companion.pairing + KindlePilot.koplugin pairing daemon + KOReader Dropbear",
       "entrypoints": [
+        "scripts/kindle-reading-setup.py prepare",
         "scripts/kindle-wireless.py prepare-plugin",
         "scripts/kindle-wireless.py transfer-plugin",
         "scripts/kindle-wireless.py pair",
@@ -186,7 +187,7 @@
         "can_forward_ports": false,
         "can_claim_collection_write": false
       },
-      "evidence": ["ephemeral_keys", "host_key_pin", "identity_readback", "expiry_cleanup"]
+      "evidence": ["six_digit_decimal_pairing", "ephemeral_client_keys", "persistent_host_key_pin", "identity_readback", "expiry_cleanup"]
     }
   ]
 }

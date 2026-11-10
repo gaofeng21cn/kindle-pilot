@@ -238,8 +238,13 @@ def verify_connection(session: dict[str, Any], route: Route, host: str) -> dict[
     dropbear_path = session.get("dropbear_path", config["dropbear_path"])
     if dropbear_path not in {config["dropbear_path"], config.get("pairing_dropbear_path")}:
         raise CompanionError("WIRELESS_IDENTITY", "session runtime path is not declared by the route")
+    serial_hash_mode = session.get("serial_hash_mode", "proc_usid")
+    if serial_hash_mode not in {"proc_usid", "usb_serial"}:
+        raise CompanionError("WIRELESS_IDENTITY", "unknown serial digest mode")
+    serial_command = ("tr -d '\\r\\n' < /proc/usid | sha256sum" if serial_hash_mode == "usb_serial"
+                      else "sha256sum /proc/usid")
     command = ("printf 'FIRMWARE='; cat /etc/prettyversion.txt; printf '\\nSERIAL='; "
-               "sha256sum /proc/usid; printf 'DROPBEAR='; sha256sum "
+               + serial_command + "; printf 'DROPBEAR='; sha256sum "
                + shlex.quote(dropbear_path))
     result = subprocess.run(ssh_arguments(session, host) + [command], capture_output=True, text=True, timeout=12)
     if result.returncode:
