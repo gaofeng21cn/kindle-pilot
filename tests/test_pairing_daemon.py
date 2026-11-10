@@ -64,7 +64,7 @@ class PairingDaemonTests(unittest.TestCase):
             raise unittest.SkipTest("LuaSocket is missing; install lua-socket or set KINDLE_TEST_LUASOCKET")
 
     @contextmanager
-    def device(self, duration=2, fail_dropbear=False, via_plugin=False):
+    def device(self, duration=2, fail_dropbear=False, via_plugin=False, code="A1B2C3"):
         with tempfile.TemporaryDirectory(prefix="kindle-daemon-") as tmp:
             root = Path(tmp)
             base = root / "KindlePilot"
@@ -102,7 +102,7 @@ class PairingDaemonTests(unittest.TestCase):
                 + ', host_public_b64="' + "B" * 68 + '" }\n'
             )
             (base / "pairing.request.lua").write_text(
-                'return {code="A1B2C3", device_nonce="' + "d" * 32
+                'return {code="' + code + '", device_nonce="' + "d" * 32
                 + '", expires_at=' + str(int(time.time()) + 20) + "}\n"
             )
             (base / "server_hostkey").write_bytes(b"fixture host identity")
@@ -212,14 +212,14 @@ plugin:start_pairing()
         with self.device(via_plugin=True) as (_, base, port, process, _):
             process.wait(timeout=4)
             self.assertEqual(process.returncode, 0)
-            code = re.search(r'code = "([A-F0-9]{6})"', (base / "pairing.request.lua").read_text())[1]
+            code = re.search(r'code = "([0-9]{6})"', (base / "pairing.request.lua").read_text())[1]
             self.assertEqual(self.exchange(port, code=code)[:2], ["KINDLEPILOT/PAIR1", "OK"])
 
     def test_host_client_pairs_with_shipped_daemon(self):
-        with self.device() as (root, _, port, process, _):
+        with self.device(code="005219") as (root, _, port, process, _):
             identity = root / "client"
             identity.with_suffix(".pub").write_text("ssh-ed25519 " + "A" * 68 + "\n")
-            result = _candidate("127.0.0.1", "127.0.0.1", "A1B2C3",
+            result = _candidate("127.0.0.1", "127.0.0.1", "005219",
                                 {"pairing_port": port, "host_public_b64": "B" * 68},
                                 identity, strict=True)
             self.assertEqual(result["host_public_b64"], "B" * 68)

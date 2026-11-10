@@ -24,10 +24,12 @@ from .wireless import dropbear_host_key, verify_connection
 PLUGIN_ROOT = Path("assets/kindlepilot.koplugin")
 
 
-def validate_pairing_code(code: str, digits: int = 6) -> str:
+def validate_pairing_code(code: str, digits: int = 6, hexadecimal: bool = False) -> str:
     value = code.strip().upper()
-    if not re.fullmatch(r"[0-9A-F]{" + str(digits) + r"}", value):
-        raise CompanionError("WIRELESS_PAIRING_CODE", f"pairing code must be {digits} hexadecimal characters")
+    alphabet = "[0-9A-F]" if hexadecimal else "[0-9]"
+    if not re.fullmatch(alphabet + "{" + str(digits) + "}", value):
+        kind = "hexadecimal characters" if hexadecimal else "decimal digits"
+        raise CompanionError("WIRELESS_PAIRING_CODE", f"pairing code must be {digits} {kind}")
     return value
 
 
@@ -41,7 +43,7 @@ def pairing_public_b64(public_key: bytes) -> str:
 def pairing_proof(code: str, client_nonce: str, client_public_b64: str, device_nonce: str) -> str:
     normalized_code = code.strip().upper()
     if len(normalized_code) not in (6, 12) or not re.fullmatch(r"[0-9A-F]+", normalized_code):
-        raise CompanionError("WIRELESS_PAIRING_CODE", "pairing code must be 6 hexadecimal characters")
+        raise CompanionError("WIRELESS_PAIRING_CODE", "pairing code must have 6 digits or use the legacy hexadecimal format")
     if (not re.fullmatch(r"[0-9a-fA-F]{32}", client_nonce)
             or not re.fullmatch(r"[0-9a-fA-F]{32}", device_nonce)):
         raise CompanionError("WIRELESS_PAIRING_NONCE", "pairing nonce must be 16 random bytes in hex")
@@ -145,6 +147,7 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
         "pairing_port": config["pairing_port"], "ssh_port": config["port"],
         "dropbear_path": dropbear_path,
         "pairing_code_digits": config["pairing_code_digits"],
+        "pairing_code_format": config["pairing_code_format"],
         "pairing_code_ttl_seconds": config["pairing_code_ttl_seconds"],
         "pairing_max_attempts": config["pairing_max_attempts"],
         "session_duration_seconds": duration, "host_public_b64": host_public_b64,
@@ -159,6 +162,7 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
              "pairing_port": config["pairing_port"], "ssh_port": config["port"],
              "duration_seconds": duration, "remote_base": base, "stage": str(stage.resolve()),
              "dropbear_path": dropbear_path,
+             "pairing_code_format": config["pairing_code_format"],
              "host_public_b64": host_public_b64, "host_key_sha256": hashlib.sha256(host_key).hexdigest(),
              "files": files, "device_started": False}
     write_new(output / "setup.json", (json.dumps(setup, indent=2) + "\n").encode())
@@ -218,12 +222,13 @@ def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: s
                  code: str, network: str | None = None, host: str | None = None) -> dict[str, Any]:
     configured_digits = int(route.wireless_maintenance["pairing_code_digits"])
     normalized_code = code.strip().upper()
-    if len(normalized_code) == 12 and configured_digits == 6:
-        # Accept one-time codes from the pre-0.2.0 plugin while the device is
-        # being updated; new plugin instances emit six-character codes.
-        validate_pairing_code(normalized_code, 12)
-    else:
+    if setup.get("pairing_code_format", "hex") == "decimal":
         validate_pairing_code(normalized_code, configured_digits)
+    else:
+        # Existing installs can complete their pending hexadecimal pairing
+        # before the decimal-code plugin is installed over the new session.
+        validate_pairing_code(normalized_code, 12 if len(normalized_code) == 12 else configured_digits,
+                              hexadecimal=True)
     if setup.get("route") != route.id: raise CompanionError("WIRELESS_PAIRING_IDENTITY", "setup route differs")
     net = _network(source_ip, network); output.mkdir(parents=True, exist_ok=True)
     if any(output.iterdir()): raise CompanionError("WIRELESS_OUTPUT", "use a new pairing session directory")

@@ -29,8 +29,11 @@ class WirelessTests(unittest.TestCase):
         proof = pairing_proof("A1B2C3", "a" * 32, "A" * 68, "b" * 32)
         self.assertEqual(len(proof), 40)
         self.assertNotIn("A1B2C3", proof)
-        self.assertEqual(validate_pairing_code("a1b2c3"), "A1B2C3")
-        self.assertEqual(validate_pairing_code("a1b2c3d4e5f6", 12), "A1B2C3D4E5F6")
+        self.assertEqual(validate_pairing_code(" 005219 "), "005219")
+        self.assertEqual(validate_pairing_code("a1b2c3", hexadecimal=True), "A1B2C3")
+        self.assertEqual(validate_pairing_code("a1b2c3d4e5f6", 12, hexadecimal=True), "A1B2C3D4E5F6")
+        with self.assertRaises(CompanionError):
+            validate_pairing_code("a1b2c3")
         with self.assertRaises(CompanionError):
             validate_pairing_code("1234")
 
@@ -71,6 +74,7 @@ class WirelessTests(unittest.TestCase):
             self.assertTrue((stage / "koreader/KindlePilot/server_hostkey").is_file())
             self.assertEqual((stage / "kindlepilot/runtime/dropbear").read_bytes(), b"fixture dropbear")
             self.assertEqual(setup["dropbear_path"], route.wireless_maintenance["pairing_dropbear_path"])
+            self.assertEqual(setup["pairing_code_format"], "decimal")
             self.assertFalse(any("id_ed25519" in name for name in setup["files"]))
             self.assertIn("pairing_port", (stage / "koreader/KindlePilot/config.lua").read_text())
 

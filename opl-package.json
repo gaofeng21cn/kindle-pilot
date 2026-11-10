@@ -100,7 +100,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:ab715879389049574e1d4cf992c58c2633752db41b0b1315a3fb360adab2f544"
+    "digest": "sha256:74c058715ec15e9836ff0ec2e781c410345ade6662f5bd97a1fd1aa10ada5c66"
   },
   "presentation": {
     "display_name_i18n": {

@@ -203,16 +203,17 @@
         "acceptance": "Colorsoft 5.20.1.0.2; ephemeral client/server Ed25519 keys; strict host pin; MTP readback; connect/discover; 12-second expiry test confirmed server stop, credential removal and firewall cleanup; production session 1800 seconds",
         "pairing_port": 2223,
         "pairing_code_digits": 6,
+        "pairing_code_format": "decimal",
         "pairing_code_ttl_seconds": 120,
         "pairing_max_attempts": 3,
         "host_key_scope": "persistent_per_device",
         "pairing_transport": "koreader_plugin_luasocket",
         "koreader_plugin_pairing": {
-          "status": "host_implemented_device_pending",
+          "status": "verified",
           "plugin": "assets/kindlepilot.koplugin",
           "transport": "ko_reader_ssh_dropbear",
           "pairing": "screen_code_hmac",
-          "device_acceptance": "pending_one_time_usb_install_and_real_pairing"
+          "device_acceptance": "2026-11-11 Colorsoft 5.20.1.0.2: screen pairing and strict SSH host pin verified; firmware, serial and pinned Dropbear read back; six decimal digits including a leading zero paired on device; 12-second expiry removed credentials, listeners and firewall rules; plugin updated over Wi-Fi"
         }
       }
     }

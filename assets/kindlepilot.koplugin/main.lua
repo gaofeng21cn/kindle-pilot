@@ -43,8 +43,16 @@ local function random_hex(bytes)
     return table.concat(output)
 end
 
-local function random_hex_digits(digits)
-    return string.sub(random_hex(math.ceil(digits / 2)), 1, digits)
+local function random_decimal_digits(digits)
+    local file = assert(io.open("/dev/urandom", "rb"))
+    local output = {}
+    while #output < digits do
+        local byte = assert(file:read(1)):byte()
+        -- Reject the incomplete final range to give each digit equal odds.
+        if byte < 250 then output[#output + 1] = tostring(byte % 10) end
+    end
+    file:close()
+    return table.concat(output)
 end
 
 local path = DataStorage:getFullDataDir()
@@ -134,7 +142,7 @@ function KindlePilot:start_pairing()
     if not self:_stop_service() then self:_show(_("无法停止上次的维护服务。"), 8); return end
     local digits = tonumber(config.pairing_code_digits) or 6
     digits = math.max(5, math.min(6, math.floor(digits)))
-    local code = random_hex_digits(digits)
+    local code = random_decimal_digits(digits)
     local expires_at = os.time() + (tonumber(config.pairing_code_ttl_seconds) or 120)
     local request = string.format(
         "return { code = %q, device_nonce = %q, expires_at = %d }\n",
