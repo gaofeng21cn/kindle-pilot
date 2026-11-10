@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-10T00:00:00+08:00",
+  "sources": {
+    "kindlemodding_vera": {
+      "name": "KindleModding Véra",
+      "url": "https://kindlemodding.org/jailbreaking/Vera/",
+      "notes": "Official jailbreak guide and asset directory; routes must be rechecked before use."
+    },
+    "koreader": {
+      "name": "KOReader",
+      "url": "https://github.com/koreader/koreader",
+      "notes": "KOReader release assets."
+    },
+    "moon": {
+      "name": "Moon / 月读",
+      "url": "https://github.com/AnkioTomas/moon",
+      "notes": "KOReader plugin that provides the unified library and account sources."
+    },
+    "kindle_koplugin": {
+      "name": "kindle.koplugin",
+      "url": "https://github.com/kaikozlov/kindle.koplugin",
+      "notes": "Virtual Kindle Library and KFX conversion support for KOReader."
+    }
+  },
+  "routes": [
+    {
+      "id": "vera-cs-5.20.1.0.2",
+      "name": "Véra / Colorsoft",
+      "device_codes": ["CS"],
+      "firmware_min": "5.20.1.0.2",
+      "firmware_max": "5.20.1.0.2",
+      "firmwares": ["5.20.1.0.2"],
+      "jailbreak_url": "https://kindlemodding.org/vera/",
+      "assets": [
+        {
+          "name": "fontcal.azw3",
+          "url": "https://kindlemodding.org/vera/books/fontcal.azw3",
+          "sha256": "0136b8110d490d94b9be50899fc5ce4e4a7f70c02df0ba957c3f35dcdad2d041",
+          "source": "kindlemodding_vera",
+          "required": true,
+          "redistribute": false,
+          "license": "upstream-unverified"
+        },
+        {
+          "name": "cs-5.20.1.0.2-jb.azw3",
+          "url": "https://kindlemodding.org/vera/books/cs-5.20.1.0.2-jb.azw3",
+          "sha256": "2ee78343d9a2f9fe060e0a26449006cc95c12b1cf122dc9c1a118cafacd856bd",
+          "source": "kindlemodding_vera",
+          "required": true,
+          "redistribute": false,
+          "license": "upstream-unverified"
+        },
+        {
+          "name": "koreader-kindlehf-v2026.07.1.zip",
+          "url": "https://github.com/koreader/koreader/releases/download/v2026.07.1/koreader-kindlehf-v2026.07.1.zip",
+          "sha256": "3343a916d12f36c01b59df1f65bd83ff5616e6c2a4dfbe919e7fa1400b8b1bbb",
+          "source": "koreader",
+          "required": false,
+          "redistribute": true,
+          "license": "AGPL-3.0"
+        },
+        {
+          "name": "book.koplugin-v0.5.6.zip",
+          "url": "https://github.com/AnkioTomas/moon/releases/download/v0.5.6/book.koplugin-v0.5.6.zip",
+          "sha256": "e23dcb7a17fe4cd22c0d455611bd319bca3e5b79a5387cadf4bfba92758c4ce1",
+          "source": "moon",
+          "required": false,
+          "redistribute": true,
+          "license": "GPL-3.0"
+        },
+        {
+          "name": "kindle-koplugin-armv7.zip",
+          "url": "https://github.com/kaikozlov/kindle.koplugin/releases/download/v0.0.11/kindle-koplugin-armv7.zip",
+          "sha256": "fbbda29e0d46a54ab9d3d8ddf9b606f02341ef789f45bd3463bcda05d853b330",
+          "source": "kindle_koplugin",
+          "required": false,
+          "redistribute": true,
+          "license": "upstream-unverified"
+        }
+      ],
+      "prerequisites": [
+        "Unlock the Kindle and connect a data-capable USB cable.",
+        "Use the exact firmware route selected by the official wizard.",
+        "Keep Wi-Fi enabled until the jailbreak has completed.",
+        "Prevent OTA updates before opening the exploit book."
+      ],
+      "manual_steps": [
+        "Open kindlemodding.org/vera in the Kindle browser and download both books.",
+        "Configure Font Calibration with the exact official font and spacing values.",
+        "Open Véra and wait for RESTARTING GUI.",
+        "Confirm that the JAILBROKEN marker appears.",
+        "Run KPM commands from the Kindle search box.",
+        "Complete WeRead and Fanqie QR login from the device screen."
+      ]
+    }
+  ]
+}

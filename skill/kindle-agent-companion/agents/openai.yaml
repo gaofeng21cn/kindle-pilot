@@ -1,0 +1,4 @@
+interface:
+  display_name: Kindle Agent Companion
+  short_description: Manage verified Kindle jailbreak and KOReader workflows
+  default_prompt: Inspect my connected Kindle, select the exact supported route, and tell me the next user action with evidence.
