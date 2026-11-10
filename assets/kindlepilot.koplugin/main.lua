@@ -49,7 +49,7 @@ function KindlePilot:_ensure_runtime()
     local ffi_ok, ffi_value = pcall(require, "ffi")
     local socket_ok, socket_value = pcall(require, "socket")
     if not ffi_ok or not socket_ok then
-        self:_show(_("KindlePilot could not load KOReader networking support."), 8)
+        self:_show(_("KindlePilot 无法加载 KOReader 网络支持。"), 8)
         return false
     end
     ffi = ffi_value
@@ -63,7 +63,7 @@ function KindlePilot:_ensure_runtime()
     end)
     local ssl_ok, ssl_value = pcall(ffi.loadlib, "ssl", "60")
     if not cdef_ok or not ssl_ok then
-        self:_show(_("KindlePilot could not load KOReader cryptography support."), 8)
+        self:_show(_("KindlePilot 无法加载加密支持。"), 8)
         return false
     end
     ssl = ssl_value
@@ -229,7 +229,7 @@ function KindlePilot:_handle_client(client)
             .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. "\\n")
         client:close()
         self:_stop_pairing()
-        self:_show(_("KindlePilot wireless maintenance is ready. You may return to the Agent."), 8)
+        self:_show(_("KindlePilot 无线维护已就绪，可以返回 Agent。"), 8)
         return
     end
     client:send("KINDLEPILOT/PAIR1 ERROR\\n")
@@ -240,7 +240,7 @@ function KindlePilot:_poll_pairing()
     if not self.server then return end
     if os.time() >= self.expires_at or self.attempts >= config.pairing_max_attempts then
         self:_stop_pairing()
-        self:_show(_("KindlePilot pairing expired."), 4)
+        self:_show(_("KindlePilot 配对已过期。"), 4)
         return
     end
     local client = self.server:accept()
@@ -252,39 +252,39 @@ function KindlePilot:start_pairing()
     if self.server then return end
     if not self:_ensure_runtime() then return end
     if not exists(hostkey) or not config.host_public_b64 then
-        self:_show(_("KindlePilot is not paired with this computer yet. Connect USB once to install the pairing identity."), 8)
+        self:_show(_("KindlePilot 尚未与这台电脑配对，请先通过 USB 安装一次配对身份。"), 8)
         return
     end
     if exists(pid_path) then self:_stop_ssh() end
     local server, err = socket.bind("*", config.pairing_port)
-    if not server then self:_show(_("Could not start KindlePilot pairing: ") .. tostring(err), 8); return end
+    if not server then self:_show(_("无法启动 KindlePilot 配对：") .. tostring(err), 8); return end
     self.server = server
     self.server:settimeout(0)
     self.pairing_code = random_hex(6)
     self.device_nonce = random_hex(16)
     self.expires_at = os.time() + config.pairing_code_ttl_seconds
     self.attempts = 0
-    if not self:_pairing_firewall(true) then self:_stop_pairing(); self:_show(_("Wi-Fi address is unavailable."), 6); return end
-    self:_show(string.format(_("KindlePilot pairing code:\n\n%s\n\nTell this code to the Agent.\nIt expires in %d seconds."), self.pairing_code, config.pairing_code_ttl_seconds), config.pairing_code_ttl_seconds + 2)
+    if not self:_pairing_firewall(true) then self:_stop_pairing(); self:_show(_("无法获取 Wi-Fi 地址。"), 6); return end
+    self:_show(string.format(_("KindlePilot 配对码：\n\n%s\n\n请把此配对码告诉 Agent。\n%d 秒后过期。"), self.pairing_code, config.pairing_code_ttl_seconds), config.pairing_code_ttl_seconds + 2)
     self:_poll_pairing()
 end
 
 function KindlePilot:stop_maintenance()
     self:_stop_pairing()
     self:_stop_ssh()
-    self:_show(_("KindlePilot wireless maintenance stopped."), 4)
+    self:_show(_("KindlePilot 无线维护已停止。"), 4)
 end
 
 function KindlePilot:addToMainMenu(menu_items)
     menu_items.kindlepilot_wireless = {
-        text = _("KindlePilot wireless maintenance"),
+        text = _("KindlePilot 无线维护"),
         sub_item_table = {
             {
-                text = _("Pair this computer and start maintenance"),
+                text = _("配对此电脑并开始维护"),
                 callback = function() self:start_pairing() end,
             },
             {
-                text = _("Stop wireless maintenance"),
+                text = _("停止无线维护"),
                 callback = function() self:stop_maintenance() end,
             },
         },

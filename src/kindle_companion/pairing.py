@@ -147,17 +147,21 @@ def _candidate(host: str, source_ip: str, code: str, setup: dict[str, Any], iden
     try:
         with socket.create_connection((host, int(setup["pairing_port"])), timeout=1.2) as client:
             client.settimeout(2.5); client.sendall(f"KINDLEPILOT/PAIR1 HELLO {nonce}\n".encode())
-            challenge = client.recv(256).decode().splitlines()[0].split()
-            if challenge[:2] != ["KINDLEPILOT/PAIR1", "CHALLENGE"]: return None
+            challenge_lines = client.recv(256).decode(errors="replace").splitlines()
+            if not challenge_lines: return None
+            challenge = challenge_lines[0].split()
+            if len(challenge) != 3 or challenge[:2] != ["KINDLEPILOT/PAIR1", "CHALLENGE"]: return None
             proof = pairing_proof(code, nonce, public, challenge[2])
             client.sendall(f"KINDLEPILOT/PAIR1 AUTH {nonce} {public} {proof}\n".encode())
-            response = client.recv(512).decode().splitlines()[0].split()
-            if response[:2] != ["KINDLEPILOT/PAIR1", "OK"] or len(response) != 6: return None
+            response_lines = client.recv(512).decode(errors="replace").splitlines()
+            if not response_lines: return None
+            response = response_lines[0].split()
+            if len(response) != 6 or response[:2] != ["KINDLEPILOT/PAIR1", "OK"]: return None
             _, _, session, host_public, port, duration = response
             if host_public != setup["host_public_b64"]: return None
             return {"host": host, "session_id": session, "host_public_b64": host_public,
                     "port": int(port), "duration_seconds": int(duration)}
-    except (OSError, ValueError, CompanionError): return None
+    except (OSError, UnicodeError, ValueError, CompanionError, IndexError): return None
 
 
 def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: str,

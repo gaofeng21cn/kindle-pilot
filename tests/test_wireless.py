@@ -18,7 +18,7 @@ from unittest.mock import patch
 from kindle_companion.manifest import load_manifest
 from kindle_companion.models import Asset, CompanionError
 from kindle_companion.wireless import dropbear_host_key, prepare_session, ssh_arguments, verify_connection
-from kindle_companion.pairing import pairing_proof, prepare_plugin, validate_pairing_code
+from kindle_companion.pairing import _candidate, pairing_proof, prepare_plugin, validate_pairing_code
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +32,20 @@ class WirelessTests(unittest.TestCase):
         self.assertEqual(validate_pairing_code("a1b2c3d4e5f6"), "A1B2C3D4E5F6")
         with self.assertRaises(CompanionError):
             validate_pairing_code("1234")
+
+    def test_pairing_scan_skips_empty_or_malformed_responses(self):
+        class EmptyClient:
+            def __enter__(self): return self
+            def __exit__(self, *_): return False
+            def settimeout(self, _): pass
+            def sendall(self, _): pass
+            def recv(self, _): return b""
+
+        identity = Path(tempfile.mkdtemp()) / "id_ed25519"
+        identity.with_suffix(".pub").write_text("ssh-ed25519 " + "A" * 68 + "\n")
+        setup = {"pairing_port": 2223, "host_public_b64": "B" * 68}
+        with patch("kindle_companion.pairing.socket.create_connection", return_value=EmptyClient()):
+            self.assertIsNone(_candidate("192.168.1.2", "192.168.1.187", "A1B2C3D4E5F6", setup, identity))
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:
