@@ -223,7 +223,7 @@ function KindlePilot:_handle_client(client)
     client:settimeout(4)
     local hello = client:receive("*l")
     local op, nonce = hello and hello:match("^(KINDLEPILOT/PAIR1) HELLO ([0-9A-Fa-f]+)$")
-    if not op or #nonce ~= 32 then client:close(); return end
+    if not op or not nonce or #nonce ~= 32 then client:close(); return end
     client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. self.device_nonce .. protocol_eol)
     local auth = client:receive("*l")
     local aop, received_nonce, public, proof = auth and auth:match("^(KINDLEPILOT/PAIR1) AUTH ([0-9A-Fa-f]+) ([A-Za-z0-9+/=]+) ([0-9a-f]+)$")
@@ -251,7 +251,10 @@ function KindlePilot:_poll_pairing()
         return
     end
     local client = self.server:accept()
-    if client then self:_handle_client(client) end
+    if client then
+        local ok = pcall(function() self:_handle_client(client) end)
+        if not ok then pcall(function() client:close() end) end
+    end
     if self.server then UIManager:scheduleIn(0.25, function() self:_poll_pairing() end) end
 end
 
