@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "kindle-pilot",
+  "version": "0.1.0",
+  "description": "Agent-guided Kindle setup, reading configuration, and library maintenance.",
+  "author": {
+    "name": "Gaofeng"
+  },
+  "repository": "https://github.com/gaofeng21cn/kindle-pilot",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Kindle Pilot",
+        "shortDescription": "Agent-guided Kindle setup and library maintenance.",
+        "longDescription": "Prepare compatible Kindle reading environments, maintain native collections, and guide the user through device and account confirmations.",
+        "developerName": "Gaofeng",
+        "category": "Productivity",
+        "websiteURL": "https://github.com/gaofeng21cn/kindle-pilot"
+      }
+    }
+  }
+}

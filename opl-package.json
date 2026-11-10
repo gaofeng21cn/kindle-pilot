@@ -57,6 +57,7 @@
       "docs/WIRELESS_MAINTENANCE.md",
       "docs/WORKFLOW.md",
       "manifests/compatibility.json",
+      "plugin.json",
       "pyproject.toml",
       "scripts/build-kc-checker.py",
       "scripts/build-mtp-plan.py",
@@ -83,7 +84,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:057de6ce3574698472e657f5f00a6ba8711aaa2d44592d7ba96c599c39b8413e"
+    "digest": "sha256:38083da87c4e7004ce395e7c2396561bbc8b09db17979a8b2e9bfafe62e393a1"
   },
   "presentation": {
     "display_name_i18n": {

@@ -17,14 +17,17 @@ def main():
     manifest_path = root / "opl-package.json"
     manifest = json.loads(manifest_path.read_text())
     plugin = json.loads((root / ".codex-plugin/plugin.json").read_text())
+    authority = json.loads((root / "plugin.json").read_text())
     marketplace = json.loads((root / ".agents/plugins/marketplace.json").read_text())
     python_version = re.search(r'^version = "([^"]+)"$', (root / "pyproject.toml").read_text(), re.M)[1]
     runtime_version = re.search(r'^__version__ = "([^"]+)"$', (root / "src/kindle_companion/__init__.py").read_text(), re.M)[1]
     assert manifest["package_id"] == plugin["name"] == marketplace["plugins"][0]["name"] == "kindle-pilot"
     assert manifest["version"] == plugin["version"] == python_version == runtime_version
+    assert authority["name"] == plugin["name"] and authority["version"] == plugin["version"]
+    assert authority["extensions"]["com.openai"]["interface"] == plugin["interface"]
     assert manifest["display_name"] == plugin["interface"]["displayName"] == marketplace["interface"]["displayName"]
     paths = sorted([
-        ".agents/plugins/marketplace.json", ".codex-plugin/plugin.json", "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md", "pyproject.toml",
+        ".agents/plugins/marketplace.json", ".codex-plugin/plugin.json", "plugin.json", "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md", "pyproject.toml",
         *[str(file.relative_to(root)) for directory in ["src", "skill", "scripts", "docs", "manifests", "assets"]
           for file in (root / directory).rglob("*") if file.is_file() and "__pycache__" not in file.parts and file.suffix not in [".pyc", ".pyo"]],
     ])
