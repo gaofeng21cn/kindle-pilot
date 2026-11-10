@@ -1,30 +1,74 @@
 local DataStorage = require("datastorage")
-local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local ffi = require("ffi")
-local socket = require("socket")
 local _ = require("gettext")
 
+local function exists(file)
+    local handle = io.open(file, "r")
+    if handle then handle:close(); return true end
+    return false
+end
+
 local path = DataStorage:getFullDataDir()
-local base = path .. "/KindlePilot"
+local canonical_base = path .. "/KindlePilot"
+local legacy_base = path .. "/settings/KindlePilot"
+
+-- Older KindlePilot builds installed the identity below settings/. Keep that
+-- path readable so updating the plugin does not rotate the device identity or
+-- force another USB pairing. New installs use the KOReader data-root path.
+local base = canonical_base
+if not exists(canonical_base .. "/config.lua") and not exists(canonical_base .. "/server_hostkey")
+        and (exists(legacy_base .. "/config.lua") or exists(legacy_base .. "/server_hostkey")) then
+    base = legacy_base
+end
+
 local config_path = base .. "/config.lua"
-local config = dofile(config_path)
+local config = {
+    pairing_port = 2223,
+    ssh_port = 2224,
+    pairing_code_ttl_seconds = 120,
+    pairing_max_attempts = 3,
+    session_duration_seconds = 1800,
+}
+local config_ok, loaded_config = pcall(dofile, config_path)
+if config_ok and type(loaded_config) == "table" then
+    for key, value in pairs(loaded_config) do config[key] = value end
+end
 local hostkey = base .. "/server_hostkey"
 local auth_path = base .. "/settings/SSH/authorized_keys"
 local pid_path = base .. "/dropbear.pid"
-
-ffi.cdef[[
-typedef void EVP_MD;
-const EVP_MD *EVP_sha1(void);
-unsigned char *HMAC(const EVP_MD *, const void *, int, const unsigned char *, size_t, unsigned char *, unsigned int *);
-]]
-local ssl = ffi.loadlib("ssl", "60")
+local ffi, socket, ssl
 
 local KindlePilot = WidgetContainer:extend{
     name = "KindlePilot",
 }
+
+function KindlePilot:_ensure_runtime()
+    if ffi and socket and ssl then return true end
+    local ffi_ok, ffi_value = pcall(require, "ffi")
+    local socket_ok, socket_value = pcall(require, "socket")
+    if not ffi_ok or not socket_ok then
+        self:_show(_("KindlePilot could not load KOReader networking support."), 8)
+        return false
+    end
+    ffi = ffi_value
+    socket = socket_value
+    local cdef_ok = pcall(function()
+        ffi.cdef[[
+        typedef void EVP_MD;
+        const EVP_MD *EVP_sha1(void);
+        unsigned char *HMAC(const EVP_MD *, const void *, int, const unsigned char *, size_t, unsigned char *, unsigned int *);
+        ]]
+    end)
+    local ssl_ok, ssl_value = pcall(ffi.loadlib, "ssl", "60")
+    if not cdef_ok or not ssl_ok then
+        self:_show(_("KindlePilot could not load KOReader cryptography support."), 8)
+        return false
+    end
+    ssl = ssl_value
+    return true
+end
 
 local function quote(value)
     return string.format("%q", value)
@@ -32,12 +76,6 @@ end
 
 local function run(command)
     return os.execute(command) == 0
-end
-
-local function exists(file)
-    local handle = io.open(file, "r")
-    if handle then handle:close(); return true end
-    return false
 end
 
 local function read_line(command)
@@ -212,6 +250,7 @@ end
 
 function KindlePilot:start_pairing()
     if self.server then return end
+    if not self:_ensure_runtime() then return end
     if not exists(hostkey) or not config.host_public_b64 then
         self:_show(_("KindlePilot is not paired with this computer yet. Connect USB once to install the pairing identity."), 8)
         return

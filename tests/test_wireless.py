@@ -50,10 +50,10 @@ class WirelessTests(unittest.TestCase):
             setup = prepare_plugin(route, archive, snapshot, root / "setup", 10)
             stage = Path(setup["stage"])
             self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/main.lua").is_file())
-            self.assertTrue((stage / "koreader/settings/KindlePilot/config.lua").is_file())
-            self.assertTrue((stage / "koreader/settings/KindlePilot/server_hostkey").is_file())
+            self.assertTrue((stage / "koreader/KindlePilot/config.lua").is_file())
+            self.assertTrue((stage / "koreader/KindlePilot/server_hostkey").is_file())
             self.assertFalse(any("id_ed25519" in name for name in setup["files"]))
-            self.assertIn("pairing_port", (stage / "koreader/settings/KindlePilot/config.lua").read_text())
+            self.assertIn("pairing_port", (stage / "koreader/KindlePilot/config.lua").read_text())
 
     def test_transfer_uploads_and_reads_back_with_one_mtp_session(self):
         spec = importlib.util.spec_from_file_location("wireless_cli", ROOT / "scripts/kindle-wireless.py")

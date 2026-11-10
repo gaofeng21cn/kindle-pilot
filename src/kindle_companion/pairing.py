@@ -106,21 +106,21 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
                     "-f", str(host_path)], check=True, capture_output=True)
     host_key, host_public = dropbear_host_key(host_path.read_bytes())
     host_public_b64 = base64.b64encode(host_public).decode()
-    base = "/mnt/us/koreader/settings/KindlePilot"
+    base = "/mnt/us/koreader/KindlePilot"
     stage = output / "stage"
     plugin_stage = stage / "koreader/plugins/KindlePilot.koplugin"
     for name in ("_meta.lua", "main.lua"):
         write_new(plugin_stage / name, (PLUGIN_ROOT / name).read_bytes())
-    write_new(stage / "koreader/settings/KindlePilot/config.lua", _plugin_config({
+    write_new(stage / "koreader/KindlePilot/config.lua", _plugin_config({
         "pairing_port": config["pairing_port"], "ssh_port": config["port"],
         "pairing_code_ttl_seconds": config["pairing_code_ttl_seconds"],
         "pairing_max_attempts": config["pairing_max_attempts"],
         "session_duration_seconds": duration, "host_public_b64": host_public_b64,
     }))
-    write_new(stage / "koreader/settings/KindlePilot/server_hostkey", host_key)
-    write_new(stage / "koreader/settings/KindlePilot/server_hostkey.pub", (host_public_b64 + "\n").encode())
-    write_new(stage / "koreader/settings/KindlePilot/stop.sh", _stop_script(base, config["port"]))
-    (stage / "koreader/settings/KindlePilot/server_hostkey").chmod(0o600)
+    write_new(stage / "koreader/KindlePilot/server_hostkey", host_key)
+    write_new(stage / "koreader/KindlePilot/server_hostkey.pub", (host_public_b64 + "\n").encode())
+    write_new(stage / "koreader/KindlePilot/stop.sh", _stop_script(base, config["port"]))
+    (stage / "koreader/KindlePilot/server_hostkey").chmod(0o600)
     files = {str(p.relative_to(stage)): sha256_file(p) for p in stage.rglob("*") if p.is_file()}
     setup = {"schema": "kindle-pilot-koreader-pairing/v1", "setup_id": setup_id,
              "route": route.id, "firmware": firmware_match.group(), "serial_sha256": serial,

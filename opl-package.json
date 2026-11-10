@@ -98,7 +98,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:6410b0770753f4dfbfec1029439fe5e0a238d2b4a0dab73a486b42ceea65138d"
+    "digest": "sha256:166f896765c6ec6d119cefc18f9baf56ba3c5055195856f083293d38fe317f3d"
   },
   "presentation": {
     "display_name_i18n": {

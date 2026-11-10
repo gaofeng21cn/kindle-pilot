@@ -18,7 +18,7 @@ python3 scripts/kindle-wireless.py transfer-plugin \
   --setup work/wireless/koreader-pairing/setup.json
 ```
 
-这一步只需要 USB。它把 `KindlePilot.koplugin`、设备主机密钥和配置放入 `koreader/plugins/` 与 `koreader/settings/KindlePilot/`；客户端私钥不会传到 Kindle。
+这一步只需要 USB。它把 `KindlePilot.koplugin`、设备主机密钥和配置放入 `koreader/plugins/` 与 `koreader/KindlePilot/`；客户端私钥不会传到 Kindle。早期版本曾写入 `koreader/settings/KindlePilot/`，新版插件会兼容读取这一路径，因此更新时不会要求重新配对。
 
 ## 以后每次使用
 
