@@ -10,7 +10,7 @@ from kindle_companion.compat import compare_versions, decide_route, product_code
 from kindle_companion.discovery import discover
 from kindle_companion.manifest import load_manifest
 from kindle_companion.models import CompanionError, DeviceIdentity
-from kindle_companion.mtp import MtpClient, parse_storage_info
+from kindle_companion.mtp import MtpClient, parse_storage_info, quote_batch_arg
 from kindle_companion.state import load_state, record_step, save_state
 from kindle_companion.verify import verify_asset
 
@@ -69,6 +69,9 @@ class CompanionTests(unittest.TestCase):
             with self.assertRaises(CompanionError) as raised:
                 client.run(("storage-info 65537", "exit"))
         self.assertEqual(raised.exception.code, "MTP_TRANSFER_FAILED")
+
+    def test_mtp_quotes_paths_with_spaces(self) -> None:
+        self.assertEqual(quote_batch_arg("/tmp/My Kindle/file.bin"), '"/tmp/My Kindle/file.bin"')
 
     def test_state_requires_confirmation_for_manual_steps(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

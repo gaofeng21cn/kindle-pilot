@@ -17,6 +17,16 @@ DEFAULT_MTP_CANDIDATES = (
 )
 
 
+def quote_batch_arg(value: str | Path) -> str:
+    """Quote one OpenMTP batch argument without invoking a shell."""
+    text = str(value)
+    if not text:
+        return '""'
+    if not re.search(r"[\s\"'\\]", text):
+        return text
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 @dataclass(frozen=True)
 class MtpResult:
     command: str
@@ -121,17 +131,19 @@ class MtpClient:
         return parse_storage_info(result.output)
 
     def list_path(self, path: str = "/") -> list[str]:
-        result = self.run((f"lsext {path}", "exit"))
+        result = self.run((f"lsext {quote_batch_arg(path)}", "exit"))
         return parse_listing(result.output)
 
     def delete_paths(self, paths: Iterable[str]) -> MtpResult:
-        commands = ["cd /"] + [f"rm {path}" for path in paths] + ["exit"]
+        commands = ["cd /"] + [f"rm {quote_batch_arg(path)}" for path in paths] + ["exit"]
         return self.run(commands)
 
     def mkdir(self, path: str) -> MtpResult:
-        return self.run((f"mkpath {path}", "exit"))
+        return self.run((f"mkpath {quote_batch_arg(path)}", "exit"))
 
     def put(self, local_path: Path, remote_dir: str) -> MtpResult:
         if not local_path.is_file():
             raise CompanionError("LOCAL_ASSET_MISSING", f"local file not found: {local_path}")
-        return self.run((f"put {local_path} {remote_dir}", "exit"))
+        return self.run(
+            (f"put {quote_batch_arg(local_path)} {quote_batch_arg(remote_dir)}", "exit")
+        )

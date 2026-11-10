@@ -22,7 +22,7 @@ class PlanTests(unittest.TestCase):
 
     def test_delete_plan_refuses_broad_targets(self) -> None:
         with self.assertRaises(CompanionError):
-            build_delete_plan(["/documents"])
+            build_delete_plan(["/documents/"])
 
     def test_delete_plan_keeps_exact_paths(self) -> None:
         self.assertEqual(
