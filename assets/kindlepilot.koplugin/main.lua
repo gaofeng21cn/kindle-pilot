@@ -42,6 +42,11 @@ local pid_path = base .. "/dropbear.pid"
 local ffi, socket, ssl
 local protocol_eol = "\n"
 
+local function receive_line(client)
+    local value, err, partial = client:receive("*l")
+    return value or partial, err
+end
+
 local KindlePilot = WidgetContainer:extend{
     name = "KindlePilot",
 }
@@ -221,12 +226,12 @@ end
 
 function KindlePilot:_handle_client(client)
     client:settimeout(4)
-    local hello = client:receive("*l")
-    local op, nonce = hello and hello:match("^(KINDLEPILOT/PAIR1) HELLO ([0-9A-Fa-f]+)$")
+    local hello = receive_line(client)
+    local op, nonce = hello and hello:match("^%s*(KINDLEPILOT/PAIR1)%s+HELLO%s+([0-9A-Fa-f]+)%s*$")
     if not op or not nonce or #nonce ~= 32 then client:close(); return end
     client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. self.device_nonce .. protocol_eol)
-    local auth = client:receive("*l")
-    local aop, received_nonce, public, proof = auth and auth:match("^(KINDLEPILOT/PAIR1) AUTH ([0-9A-Fa-f]+) ([A-Za-z0-9+/=]+) ([0-9a-f]+)$")
+    local auth = receive_line(client)
+    local aop, received_nonce, public, proof = auth and auth:match("^%s*(KINDLEPILOT/PAIR1)%s+AUTH%s+([0-9A-Fa-f]+)%s+([A-Za-z0-9+/=]+)%s+([0-9a-f]+)%s*$")
     self.attempts = self.attempts + 1
     local valid = aop and received_nonce == nonce and valid_public(public) and #proof == 40
         and constant_equal(hmac_sha1(self.pairing_code, nonce .. "|" .. public .. "|" .. self.device_nonce), proof)

@@ -55,6 +55,8 @@ class WirelessTests(unittest.TestCase):
         self.assertNotIn('.. "\\\\n")', plugin)
         self.assertIn('if not op or not nonce or #nonce ~= 32 then', plugin)
         self.assertIn('local ok = pcall(function() self:_handle_client(client) end)', plugin)
+        self.assertIn('return value or partial, err', plugin)
+        self.assertIn('%s+HELLO%s+', plugin)
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:
