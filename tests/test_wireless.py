@@ -53,10 +53,10 @@ class WirelessTests(unittest.TestCase):
         self.assertIn('local protocol_eol = "\\n"', daemon)
         self.assertIn('.. protocol_eol)', daemon)
         self.assertNotIn('.. "\\\\n")', daemon)
-        self.assertIn('if not op or not nonce or #nonce ~= 32 then', daemon)
+        self.assertIn('if not nonce or #nonce ~= 32 then', daemon)
         self.assertIn('local ok, result = pcall(handle_client, client)', daemon)
         self.assertIn('local value, err = client:receive(1)', daemon)
-        self.assertIn('%s+HELLO%s+', daemon)
+        self.assertIn('HELLO%s+', daemon)
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -46,11 +46,16 @@ end
 
 local function receive_line(client)
     local chunks = {}
-    for _ = 1, 512 do
+    local started = socket.gettime and socket.gettime() or os.time()
+    while #chunks < 512 do
         local value, err = client:receive(1)
         if value then
             if value == "\n" then return table.concat(chunks), nil end
             chunks[#chunks + 1] = value
+        elseif err == "timeout" then
+            local now = socket.gettime and socket.gettime() or os.time()
+            if now - started >= 4 then return table.concat(chunks), err end
+            socket.sleep(0.01)
         else
             return table.concat(chunks), err
         end
@@ -152,8 +157,8 @@ local function handle_client(client)
     client:settimeout(4)
     local hello, hello_err = receive_line(client)
     append_log("HELLO len=" .. tostring(#hello) .. " err=" .. tostring(hello_err))
-    local op, nonce = hello and hello:match("^%s*(KINDLEPILOT/PAIR1)%s+HELLO%s+([0-9A-Fa-f]+)%s*$")
-    if not op or not nonce or #nonce ~= 32 then
+    local nonce = hello and hello:match("HELLO%s+([0-9A-Fa-f]+)")
+    if not nonce or #nonce ~= 32 then
         client:send("KINDLEPILOT/PAIR1 ERROR" .. protocol_eol)
         client:close()
         append_log("HELLO_INVALID")
@@ -162,9 +167,9 @@ local function handle_client(client)
     append_log("HELLO_OK")
     client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. request.device_nonce .. protocol_eol)
     local auth = receive_line(client)
-    local aop, received_nonce, public, proof = auth and auth:match("^%s*(KINDLEPILOT/PAIR1)%s+AUTH%s+([0-9A-Fa-f]+)%s+([A-Za-z0-9+/=]+)%s+([0-9a-f]+)%s*$")
+    local received_nonce, public, proof = auth and auth:match("AUTH%s+([0-9A-Fa-f]+)%s+([A-Za-z0-9+/=]+)%s+([0-9a-f]+)")
     local expected = hmac_sha1(request.code, nonce .. "|" .. tostring(public) .. "|" .. request.device_nonce)
-    local valid = aop and received_nonce == nonce and valid_public(public) and #proof == 40 and expected and constant_equal(expected, proof)
+    local valid = received_nonce == nonce and valid_public(public) and proof and #proof == 40 and expected and constant_equal(expected, proof)
     local source = client:getpeername()
     if valid and source and start_ssh(public, source) then
         client:send("KINDLEPILOT/PAIR1 OK " .. random_hex(16) .. " " .. config.host_public_b64 .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. protocol_eol)
