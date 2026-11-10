@@ -1,5 +1,7 @@
 # KindlePilot 工作流
 
+已完成装机、现在要整理原生图书馆的设备，直接使用[原生集合工作流](NATIVE_COLLECTIONS.md)，不重复下列越狱步骤。
+
 KindlePilot 的用户入口是一句话：
 
 ~~~text

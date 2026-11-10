@@ -72,6 +72,7 @@ class Route:
     assets: tuple[Asset, ...]
     prerequisites: tuple[str, ...]
     manual_steps: tuple[str, ...]
+    native_collections: dict[str, Any] | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Route":
@@ -86,6 +87,7 @@ class Route:
             assets=tuple(Asset.from_dict(v) for v in data.get("assets", [])),
             prerequisites=tuple(str(v) for v in data.get("prerequisites", [])),
             manual_steps=tuple(str(v) for v in data.get("manual_steps", [])),
+            native_collections=data.get("native_collections"),
         )
 
 

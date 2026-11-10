@@ -73,6 +73,12 @@ class CompanionTests(unittest.TestCase):
     def test_mtp_quotes_paths_with_spaces(self) -> None:
         self.assertEqual(quote_batch_arg("/tmp/My Kindle/file.bin"), '"/tmp/My Kindle/file.bin"')
 
+    def test_mtp_missing_device_is_failure_even_with_zero_exit(self) -> None:
+        completed = Mock(returncode=0, stdout="no mtp device found", stderr="")
+        with self.assertRaises(CompanionError) as raised:
+            MtpClient(Path("/tmp/mtp-cli"), runner=Mock(return_value=completed)).run(("exit",))
+        self.assertEqual(raised.exception.code, "MTP_TRANSFER_FAILED")
+
     def test_state_requires_confirmation_for_manual_steps(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "state.json"

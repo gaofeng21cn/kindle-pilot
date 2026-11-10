@@ -21,16 +21,30 @@
       "name": "kindle.koplugin",
       "url": "https://github.com/kaikozlov/kindle.koplugin",
       "notes": "Virtual Kindle Library and KFX conversion support for KOReader."
+    },
+    "kc_ivy": {
+      "name": "kc-ivy / KC",
+      "url": "https://github.com/uiu8/kc-ivy",
+      "notes": "KC 0.6.16 native collection service adapter; Colorsoft and MTP are experimental until device-specific readback."
+    },
+    "sqlite": {
+      "name": "SQLite",
+      "url": "https://sqlite.org/",
+      "notes": "Public-domain amalgamation; build KC backup checker with the target firmware SQLite syntax support."
     }
   },
   "routes": [
     {
       "id": "vera-cs-5.20.1.0.2",
       "name": "Véra / Colorsoft",
-      "device_codes": ["CS"],
+      "device_codes": [
+        "CS"
+      ],
       "firmware_min": "5.20.1.0.2",
       "firmware_max": "5.20.1.0.2",
-      "firmwares": ["5.20.1.0.2"],
+      "firmwares": [
+        "5.20.1.0.2"
+      ],
       "jailbreak_url": "https://kindlemodding.org/vera/",
       "assets": [
         {
@@ -77,6 +91,33 @@
           "required": false,
           "redistribute": true,
           "license": "upstream-unverified"
+        },
+        {
+          "name": "kc-ivy_1.0.30.zip",
+          "url": "https://github.com/uiu8/kc-ivy/releases/download/v1.0.30/kc-ivy_1.0.30.zip",
+          "sha256": "89746c0af411ab9eceeaa57d6abda15003c7752d3226072f6edd94150ccd70e6",
+          "source": "kc_ivy",
+          "required": false,
+          "redistribute": false,
+          "license": "MIT"
+        },
+        {
+          "name": "sqlite-amalgamation-3470000.zip",
+          "url": "https://www.sqlite.org/2024/sqlite-amalgamation-3470000.zip",
+          "sha256": "2842fddbb1cc33f66c7da998a57535f14a6bfee159676a07bb4bf3e59375d93e",
+          "source": "sqlite",
+          "required": false,
+          "redistribute": false,
+          "license": "public-domain"
+        },
+        {
+          "name": "kc_backup_check.c",
+          "url": "https://raw.githubusercontent.com/uiu8/kc-ivy/1b656682d8774ed76070615d1047a861c33962ba/native/kc_backup_check.c",
+          "sha256": "166d6c480b2fdd2e3b5d14ae16c53c78672f515d84509dfd10ff271c69217fb0",
+          "source": "kc_ivy",
+          "required": false,
+          "redistribute": false,
+          "license": "MIT"
         }
       ],
       "prerequisites": [
@@ -92,7 +133,34 @@
         "Confirm that the JAILBROKEN marker appears.",
         "Run KPM commands from the Kindle search box.",
         "Complete WeRead and Fanqie QR login from the device screen."
-      ]
+      ],
+      "native_collections": {
+        "status": "blocked",
+        "runtime": "KC 0.6.16",
+        "asset": "kc-ivy_1.0.30.zip",
+        "upstream_support": "Windows / Calibre 9.15+ / PW5 5.17.1.0.3 / USB mass storage",
+        "local_device_acceptance": "readonly_verified; six-step trial 5/6; durable membership failed; automatic edits disabled",
+        "write_interface": "http://127.0.0.1:9101/change",
+        "database_access": "read-only",
+        "evidence_url": "https://github.com/uiu8/kc-ivy/blob/v1.0.30/release/KINDLE_ENVIRONMENT.md",
+        "runtime_id": "0.6.16-pilot.1",
+        "checker_build": {
+          "source_asset": "kc_backup_check.c",
+          "sqlite_asset": "sqlite-amalgamation-3470000.zip",
+          "sqlite_prefix": "sqlite-amalgamation-3470000",
+          "sqlite_version": "3.47.0",
+          "target": "arm-linux-musleabihf",
+          "cpu": "cortex_a8",
+          "zig": "0.17.1",
+          "artifact_sha256": "09dba50e399a97914a908288ffc527694529205ee664965e955cffd9a776f0e9",
+          "reason": "Stock KC SQLite 3.26 cannot parse GENERATED columns in Colorsoft 5.20.1.0.2 AuditLog; keep backup validation and rebuild the same checker with SQLite 3.47.0."
+        },
+        "limitations": [
+          "Stock KC backup checker uses SQLite 3.26 and cannot parse generated columns; use the pinned SQLite 3.47.0 rebuild.",
+          "After repeated add/remove operations, membership changed between verification and the next operation; delete stopped with PRECONDITION_CHANGED.",
+          "KC capability record remains verify_state only. Do not enable batch edits or treat transient confirmed operations as durable acceptance."
+        ]
+      }
     }
   ]
 }

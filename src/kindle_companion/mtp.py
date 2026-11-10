@@ -14,6 +14,7 @@ from .models import CompanionError
 DEFAULT_MTP_CANDIDATES = (
     Path("/Applications/OpenMTP.app/Contents/Resources/bin/mtp-cli"),
     Path("/Applications/OpenMTP 3.3.0-arm64.app/Contents/Resources/bin/mtp-cli"),
+    Path.home() / "Applications/OpenMTP.app/Contents/Resources/bin/mtp-cli",
 )
 
 
@@ -38,7 +39,12 @@ class MtpResult:
         return tuple(
             line
             for line in self.output.splitlines()
-            if re.search(r"StoreFull|SendObjectInfo|invalid response|^error:", line, re.I)
+            if re.search(
+                r"StoreFull|SendObjectInfo|invalid response|^error:|"
+                r"\bno (?:raw |mtp )?devices?(?: found)?\b",
+                line,
+                re.I,
+            )
         )
 
 
