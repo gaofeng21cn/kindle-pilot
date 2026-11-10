@@ -1,131 +1,89 @@
 # KindlePilot
 
-让你的 Agent 帮你装好、用好 Kindle。
+**让你的 Agent 帮你装好、用好 Kindle。**
 
-KindlePilot 是面向 Agent 的 Kindle 管理工作流。Pilot 表示由 Agent 驾驶整条流程：识别设备、选择路线、安排安装，并在需要时把控制权交回用户确认。它把 USB 识别、精确固件路线、官方材料校验、OpenMTP 稳定传输、KOReader / 月读 / Kindle 书库插件安装，以及安装后的逐项验收放在一条可恢复的流程里。每一步都会说明当前设备、下一位执行者和可以回读的证据。
+KindlePilot 为你的 Agent 提供 Kindle 装机与管理所需的 Skill、工作流和命令行工具。从识别设备、选择越狱路线，到安装 KOReader、月读和检查阅读效果，由 Agent 推进电脑侧操作，你在需要时完成触屏和扫码。
 
 ## 一句话开始
 
-安装 `kindle-pilot` Skill 后，把 Kindle 用数据线连接到电脑，直接对你的 Agent 说：
+1. 用 USB 数据线把 Kindle 接到 Mac，解锁设备；如果正在使用 KOReader，先完全退出。
+2. 打开能联网、执行本机命令和访问 USB 设备的 Agent。
+3. 把下面这句话发给它：
 
 ~~~text
-请使用 $kindle-pilot 管理我当前连接的 Kindle：先识别型号、固件和 USB 状态，选择准确兼容路线；如果支持，就下载并校验官方材料，使用单一 MTP 会话传输；保留原生 Kindle 图书馆，同时配置本地图书、微信读书和番茄小说；在我完成 Kindle 屏幕上的必要步骤后继续，持续推进但不要重复已完成步骤，最后逐项回读验收。
+请按 https://github.com/gaofeng21cn/kindle-pilot 的 README 和 Agent 指引，帮我配置已连接的 Kindle：保留原生书库，装好本地阅读、微信读书和番茄小说，需要我触屏或扫码时告诉我，完成后继续。
 ~~~
 
-如果 Agent 还没有安装这个 Skill，也可以直接说：
+无需先手动安装 Skill。Agent 会读取本仓库的 [Agent 指引](skill/kindle-pilot/SKILL.md)，检查电脑环境和设备兼容性，再下载材料并推进安装。完整固件版本需要你从 Kindle 的“设备信息”中提供。
 
-~~~
-请读取 https://github.com/gaofeng21cn/kindle-pilot 的 README 和 skill/kindle-pilot/SKILL.md，然后管理我当前连接的 Kindle；需要我操作 Kindle 屏幕时明确告诉我下一步，并在我回复完成后继续推进。
-~~~
-
-之后不需要重新描述上下文。下面这些短消息都可以让 Agent 接着上次的状态继续：
+已经安装 `kindle-pilot` Skill 的用户，可以直接说：
 
 ~~~text
-已连接
-我已完成字体设置
-Véra 已打开，正在重启
-JAILBROKEN 已出现
-KPM 可以用了
-扫码成功
+$kindle-pilot 帮我配置已连接的 Kindle，用来读本地图书、微信读书和番茄小说，并保留原生书库。
 ~~~
 
-## Agent 会完成什么
+在同一次对话里，按提示完成操作后回复“已连接”“设置好了”或“扫码成功”，Agent 会核对结果并继续。换一段对话时，告诉它上次的本地仓库或状态文件位置，就能接着检查已有进度。
 
-| 阶段 | Agent 的工作 |
+## 能帮你做什么
+
+| 需求 | KindlePilot 的处理方式 |
 | --- | --- |
-| 识别 | 读取 macOS 的 USB / ioreg 信息，确认产品名和设备序列号是否可见 |
-| 路线 | 读取 `manifests/compatibility.json`，按型号、完整固件版本和构建号选择精确路线；未知路线会停下，不会猜相邻版本 |
-| 材料 | 从声明的上游地址下载材料，逐个核对 SHA-256；越狱书和第三方压缩包只保存在本机忽略目录 |
-| 传输 | 生成明确的 MTP 计划，用一个 OpenMTP 客户端完成一批传输，处理带空格的路径，并回读远端文件和可用空间 |
-| 安装 | 在越狱和 KOReader 已准备好后，继续安装月读与 Kindle 书库插件，并检查目标路径 |
-| 验收 | 分开记录 USB 可见、路线支持、资产校验、MTP 写入回读、应用加载、账号登录和书籍打开结果 |
+| 第一次装机 | 识别设备和固件，选择已收录的越狱路线，准备材料，引导触屏步骤并继续安装阅读环境 |
+| 本地图书和漫画 | 安装 KOReader 与月读，协助整理本地目录并检查代表性内容能否打开 |
+| 微信读书、番茄小说 | 按月读支持的书源配置登录，引导手机扫码，分别检查账号书架和章节阅读 |
+| 保留原生 Kindle | 保留图书馆和推送入口；旧推送的 KFX 漫画可继续用原生阅读器阅读，减少逐本转换 |
+| 日常维护 | 检查安装状态，定位 USB、传输和插件问题，按已有进度继续处理 |
 
-## 你需要在 Kindle 上完成什么
+微信读书和番茄小说的可用情况取决于月读对应书源及平台接口，安装后分别以登录和实际打开书籍的结果确认。
 
-这些动作需要设备触屏或手机确认，Agent 会在正确的时机停下来并给出具体步骤：
+## 你和 Agent 如何配合
 
-1. 按 Agent 给出的官方链接打开 Véra 页面；如果该路线要求在 Kindle 浏览器下载设备专用书籍，就在 Kindle 上完成这一步。
-2. 按官方要求完成 Font Calibration 设置并保存。
-3. 打开 Véra 书籍，等待屏幕出现 `RESTARTING GUI`，再确认 `JAILBROKEN`。
-4. 在 Kindle 搜索框执行 Agent 给出的 KPM 命令，并确认 KOReader 能启动。
-5. 在月读中使用手机完成微信读书、番茄小说等服务的扫码登录。
-6. 打开代表性的本地书、Kindle 书库和账号书架，确认实际阅读行为。
+| 操作 | 谁来完成 |
+| --- | --- |
+| 环境检查、路线判断、下载校验、文件传输和插件部署 | Agent |
+| Kindle 浏览器、字体校准、打开越狱书、搜索框命令和重启确认 | 你按 Agent 的当前提示操作 |
+| 手机扫码、账号确认和代表性书籍试读 | 你完成，Agent 记录结果并继续 |
 
-Agent 不会把“文件已经复制”“命令退出码为 0”或“二维码已经显示”当成完成；每个节点都要有对应的设备或应用证据。
+Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重连，以及操作后应看到什么。电脑侧使用 OpenMTP 的命令行工具，按单客户端、单批次传输并回读文件。
 
-## 当前适配设备
+## 当前支持
 
-| 设备 | 固件 | 路线 |
+当前电脑侧自动化适配 **macOS、Python 3.10+ 和 OpenMTP**。Agent 会检查这些依赖。
+
+| Kindle | 固件版本 | 越狱路线 |
 | --- | --- | --- |
-| Kindle Colorsoft Signature Edition | `5.20.1.0.2` | KindleModding Véra / Colorsoft 精确路线 |
+| Colorsoft Signature Edition | `5.20.1.0.2` | Véra |
 
-兼容清单是版本化事实源。固件高于、低于或不同于清单中的精确版本时，KindlePilot 会停在路线判断，不会用相邻固件的越狱材料替代。
+型号、固件和安装材料以[兼容清单](manifests/compatibility.json)为准。未收录的设备或固件会先给出兼容性结论；新增路线需要核对上游资料和材料。
 
-## 安装 Skill
+## 安装后继续使用
 
-将仓库中的 `skill/kindle-pilot` 安装到你的 Agent 的 Skill 目录，或让 Agent 直接读取 GitHub 上的同一路径。安装本机 CLI 后，也可以使用 `kindle-pilot` 命令。Skill 的入口名称是 `$kindle-pilot`，CLI 产品入口是 `kindle-pilot`；Python 内部包名 `kindle_companion` 为现有调用保留。
-
-## 安装后继续管理
-
-你可以继续用自然语言让 Agent 读取状态和推进工作：
+在同一对话中，你可以继续说：
 
 ~~~text
-请使用 $kindle-pilot 继续我上次的 Kindle 流程，只读取现有状态，不要重复传输。
-请使用 $kindle-pilot 检查 KOReader、月读和 Kindle 书库插件是否实际加载，并告诉我下一步。
-请使用 $kindle-pilot 重新检查当前 Kindle 的 USB、固件路线和安装验收状态，只做只读检查。
+继续上次的安装，先检查已经完成了哪些步骤。
+帮我检查月读里的微信读书和番茄小说是否能打开书。
+帮我检查本地漫画目录，先列出整理建议。
 ~~~
 
-## 主机侧命令
+## 给 Agent 和开发者
 
-开发或排障时，可以直接调用 CLI：
+- [Agent Skill](skill/kindle-pilot/SKILL.md)：如何接受请求、继续任务和交接触屏步骤。
+- [操作工作流](docs/WORKFLOW.md)：环境准备、命令行工具、传输和验收。
+- [兼容清单](manifests/compatibility.json)：已收录路线、上游地址、文件摘要和再分发策略。
+- [架构说明](docs/ARCHITECTURE.md)：状态和工具各自负责的内容。
 
-~~~sh
-python3 -m pip install -e .
-kindle-pilot --json status
-
-PYTHONPATH=src python3 -m kindle_companion --json status
-PYTHONPATH=src python3 -m kindle_companion --json probe --firmware 5.20.1.0.2
-PYTHONPATH=src python3 -m kindle_companion --json resolve-asset \
-  fontcal.azw3 --route vera-cs-5.20.1.0.2
-PYTHONPATH=src python3 -m kindle_companion verify-asset \
-  /path/to/fontcal.azw3 \
-  --sha256 0136b8110d490d94b9be50899fc5ce4e4a7f70c02df0ba957c3f35dcdad2d041
-~~~
-
-MTP 辅助命令使用 OpenMTP 的 `mtp-cli`。默认查找 `/Applications/OpenMTP.app/Contents/Resources/bin/mtp-cli`，也可以用 KINDLE_MTP_CLI 指定路径：
-
-~~~sh
-PYTHONPATH=src python3 scripts/kindle-mtp.py storage
-PYTHONPATH=src python3 scripts/kindle-mtp.py ls /documents
-~~~
-
-执行删除、上传或安装前，Agent 应先读取目录和存储信息，并把具体目标写入状态证据。工具不会删除整个 `documents`、`/koreader`、`/libkh` 或未知用户文件。
-
-## 工作流
-
-~~~text
-USB 可见
-  -> 型号 / 完整固件路线判断
-  -> 上游材料下载与 SHA-256 校验
-  -> 单会话 MTP 传输与远端回读
-  -> 用户完成字体校准与 Véra 触发
-  -> 用户确认 JAILBROKEN / KPM
-  -> Agent 安装 KOReader / 月读 / kindle.koplugin
-  -> 重启后验证应用加载
-  -> 用户完成微信读书 / 番茄小说扫码并打开代表性书籍
-~~~
-
-## 资产与许可
-
-仓库不提交越狱书、设备转储、账号 Cookie、二维码载荷或第三方发布包。`manifests/compatibility.json` 只保存上游地址、来源、摘要和再分发状态；Agent 下载后的私有材料应放在未跟踪目录，并在传输前核对 SHA-256。
-
-KOReader、月读、`kindle.koplugin` 和 KindleModding Véra 分属不同上游项目。本仓库只维护集成元数据和主机侧工作流，不代替确认各上游当前的许可证、发布权限和运行责任，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-## 开发与验证
+运行主机侧检查：
 
 ~~~sh
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 python3 -m compileall -q src scripts
 ~~~
 
-本项目采用 MIT 许可证。设备安装、账号登录和真实书籍阅读必须在用户自己的 Kindle、手机和账号上完成；仓库测试只证明主机侧解析、状态机、摘要校验和 MTP 命令合同。
+这些检查覆盖主机工具；设备安装、应用加载和账号阅读分别在实际使用中验收。
+
+## 来源与许可
+
+KindlePilot 自有代码采用 [MIT 许可证](LICENSE)。阅读环境依赖 KindleModding Véra、KOReader、月读和 `kindle.koplugin` 等上游项目，来源与许可证见[第三方声明](THIRD_PARTY_NOTICES.md)。
+
+仓库保存集成代码、工作流、下载地址和校验摘要。越狱书及插件包按需从上游下载，设备资料和登录信息留在用户本地。
