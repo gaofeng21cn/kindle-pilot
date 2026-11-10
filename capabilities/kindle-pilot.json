@@ -167,18 +167,18 @@
         "en-US": "Temporary wireless maintenance"
       },
       "kind": "transport",
-      "owner": "kindle_companion.wireless",
+      "owner": "kindle_companion.pairing + KOReader SSH.koplugin",
       "entrypoints": [
-        "scripts/kindle-wireless.py prepare",
-        "scripts/kindle-wireless.py transfer",
+        "scripts/kindle-wireless.py prepare-plugin",
+        "scripts/kindle-wireless.py transfer-plugin",
+        "scripts/kindle-wireless.py pair",
         "scripts/kindle-wireless.py connect",
         "scripts/kindle-wireless.py discover",
         "scripts/kindle-wireless.py stop"
       ],
       "transport": ["temporary_ssh_over_wifi", "usb_mtp"],
       "route_binding": "manifests/compatibility.json#/routes[].wireless_maintenance",
-      "human_handoffs": ["open_wireless_launcher", "disconnect_usb_before_ssh"],
-      "assets": ["assets/wireless-cover.png"],
+      "human_handoffs": ["open_koreader_pairing_menu", "disconnect_usb_before_ssh"],
       "authority": {
         "can_open_temporary_ssh": true,
         "can_bind_to_current_host": true,

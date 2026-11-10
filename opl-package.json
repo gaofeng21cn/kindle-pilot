@@ -58,6 +58,8 @@
       "README.md",
       "THIRD_PARTY_NOTICES.md",
       "assets/README.md",
+      "assets/kindlepilot.koplugin/_meta.lua",
+      "assets/kindlepilot.koplugin/main.lua",
       "assets/wireless-cover.png",
       "assets/wireless-cover.prompt.txt",
       "capabilities/kindle-pilot.json",
@@ -89,13 +91,14 @@
       "src/kindle_companion/manifest.py",
       "src/kindle_companion/models.py",
       "src/kindle_companion/mtp.py",
+      "src/kindle_companion/pairing.py",
       "src/kindle_companion/plan.py",
       "src/kindle_companion/software.py",
       "src/kindle_companion/state.py",
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:39fced50dd2512ac8841d7370219d47de764f931b2951bfe9c52ed41248710db"
+    "digest": "sha256:6410b0770753f4dfbfec1029439fe5e0a238d2b4a0dab73a486b42ceea65138d"
   },
   "presentation": {
     "display_name_i18n": {

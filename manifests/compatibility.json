@@ -190,16 +190,29 @@
         "default_duration_seconds": 1800,
         "maximum_duration_seconds": 3600,
         "source_binding": "current_host_interface_ipv4_per_session",
-        "authentication": "ephemeral_ed25519_public_key_only",
+        "authentication": "one_time_screen_code_hmac_then_ephemeral_ed25519_public_key",
         "port_forwarding": false,
         "separate_from_native_collection_capability": true,
-        "server_identity": "per-session Ed25519 host key pinned on host before transfer",
+        "server_identity": "persistent device host key pinned after first KOReader pairing",
         "launcher_cover": {
           "path": "assets/wireless-cover.png",
           "sha256": "4f0e6d9dd8b5006ed8db19bbf4ca38abf4123bb3b6ec313afc2def76af4d619c",
           "media_type": "image/png"
         },
-        "acceptance": "Colorsoft 5.20.1.0.2; ephemeral client/server Ed25519 keys; strict host pin; MTP readback; connect/discover; 12-second expiry test confirmed server stop, credential removal and firewall cleanup; production session 1800 seconds"
+        "acceptance": "Colorsoft 5.20.1.0.2; ephemeral client/server Ed25519 keys; strict host pin; MTP readback; connect/discover; 12-second expiry test confirmed server stop, credential removal and firewall cleanup; production session 1800 seconds",
+        "pairing_port": 2223,
+        "pairing_code_digits": 12,
+        "pairing_code_ttl_seconds": 120,
+        "pairing_max_attempts": 3,
+        "host_key_scope": "persistent_per_device",
+        "pairing_transport": "koreader_plugin_luasocket",
+        "koreader_plugin_pairing": {
+          "status": "host_implemented_device_pending",
+          "plugin": "assets/kindlepilot.koplugin",
+          "transport": "ko_reader_ssh_dropbear",
+          "pairing": "screen_code_hmac",
+          "device_acceptance": "pending_one_time_usb_install_and_real_pairing"
+        }
       }
     }
   ]

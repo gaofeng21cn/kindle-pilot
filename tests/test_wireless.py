@@ -18,12 +18,43 @@ from unittest.mock import patch
 from kindle_companion.manifest import load_manifest
 from kindle_companion.models import Asset, CompanionError
 from kindle_companion.wireless import dropbear_host_key, prepare_session, ssh_arguments, verify_connection
+from kindle_companion.pairing import pairing_proof, prepare_plugin, validate_pairing_code
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class WirelessTests(unittest.TestCase):
+    def test_koreader_pairing_proof_keeps_screen_code_off_network(self):
+        proof = pairing_proof("A1B2C3D4E5F6", "a" * 32, "A" * 68, "b" * 32)
+        self.assertEqual(len(proof), 40)
+        self.assertNotIn("A1B2C3D4E5F6", proof)
+        self.assertEqual(validate_pairing_code("a1b2c3d4e5f6"), "A1B2C3D4E5F6")
+        with self.assertRaises(CompanionError):
+            validate_pairing_code("1234")
+
+    def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive = root / "reader.zip"
+            with zipfile.ZipFile(archive, "w") as z:
+                z.writestr("koreader/dropbear", b"fixture dropbear")
+            route = load_manifest(ROOT / "manifests/compatibility.json").routes[0]
+            config = dict(route.wireless_maintenance, asset="reader.zip",
+                          dropbear_sha256=hashlib.sha256(b"fixture dropbear").hexdigest())
+            route = replace(route, wireless_maintenance=config,
+                            assets=(Asset("reader.zip", "https://example.invalid/reader.zip",
+                                          hashlib.sha256(archive.read_bytes()).hexdigest(), "fixture"),))
+            snapshot = {"firmware": "Kindle 5.20.1.0.2 (fixture)",
+                        "device": {"serial_sha256": "a" * 64}}
+            setup = prepare_plugin(route, archive, snapshot, root / "setup", 10)
+            stage = Path(setup["stage"])
+            self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/main.lua").is_file())
+            self.assertTrue((stage / "koreader/settings/KindlePilot/config.lua").is_file())
+            self.assertTrue((stage / "koreader/settings/KindlePilot/server_hostkey").is_file())
+            self.assertFalse(any("id_ed25519" in name for name in setup["files"]))
+            self.assertIn("pairing_port", (stage / "koreader/settings/KindlePilot/config.lua").read_text())
+
     def test_transfer_uploads_and_reads_back_with_one_mtp_session(self):
         spec = importlib.util.spec_from_file_location("wireless_cli", ROOT / "scripts/kindle-wireless.py")
         cli = importlib.util.module_from_spec(spec)
