@@ -48,6 +48,12 @@ class WirelessTests(unittest.TestCase):
         with patch("kindle_companion.pairing.socket.create_connection", return_value=EmptyClient()):
             self.assertIsNone(_candidate("192.168.1.2", "192.168.1.187", "A1B2C3D4E5F6", setup, identity))
 
+    def test_plugin_pairing_protocol_uses_real_line_terminators(self):
+        plugin = (ROOT / "assets/kindlepilot.koplugin/main.lua").read_text()
+        self.assertIn('local protocol_eol = "\\n"', plugin)
+        self.assertIn('.. protocol_eol)', plugin)
+        self.assertNotIn('.. "\\\\n")', plugin)
+
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

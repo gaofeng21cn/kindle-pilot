@@ -40,6 +40,7 @@ local hostkey = base .. "/server_hostkey"
 local auth_path = base .. "/settings/SSH/authorized_keys"
 local pid_path = base .. "/dropbear.pid"
 local ffi, socket, ssl
+local protocol_eol = "\n"
 
 local KindlePilot = WidgetContainer:extend{
     name = "KindlePilot",
@@ -203,7 +204,7 @@ function KindlePilot:_start_ssh(public, source)
     if not private_ipv4(source) or not valid_public(public) or not exists(hostkey) then return false end
     local file = io.open(auth_path, "w")
     if not file then return false end
-    file:write("ssh-ed25519 " .. public .. " kindlepilot-pair\\n")
+    file:write("ssh-ed25519 " .. public .. " kindlepilot-pair" .. protocol_eol)
     file:close()
     run("chmod 600 " .. quote(auth_path) .. " " .. quote(hostkey))
     local ip = self:_device_ip()
@@ -223,7 +224,7 @@ function KindlePilot:_handle_client(client)
     local hello = client:receive("*l")
     local op, nonce = hello and hello:match("^(KINDLEPILOT/PAIR1) HELLO ([0-9A-Fa-f]+)$")
     if not op or #nonce ~= 32 then client:close(); return end
-    client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. self.device_nonce .. "\\n")
+    client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. self.device_nonce .. protocol_eol)
     local auth = client:receive("*l")
     local aop, received_nonce, public, proof = auth and auth:match("^(KINDLEPILOT/PAIR1) AUTH ([0-9A-Fa-f]+) ([A-Za-z0-9+/=]+) ([0-9a-f]+)$")
     self.attempts = self.attempts + 1
@@ -232,13 +233,13 @@ function KindlePilot:_handle_client(client)
     local source = client:getpeername()
     if valid and source and self:_start_ssh(public, source) then
         client:send("KINDLEPILOT/PAIR1 OK " .. random_hex(16) .. " " .. config.host_public_b64
-            .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. "\\n")
+            .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. protocol_eol)
         client:close()
         self:_stop_pairing()
         self:_show(_("KindlePilot 无线维护已就绪，可以返回 Agent。"), 8)
         return
     end
-    client:send("KINDLEPILOT/PAIR1 ERROR\\n")
+    client:send("KINDLEPILOT/PAIR1 ERROR" .. protocol_eol)
     client:close()
 end
 
