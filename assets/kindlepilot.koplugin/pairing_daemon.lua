@@ -4,6 +4,7 @@ local socket = require("socket")
 local base = arg[2]
 local root = arg[3]
 local protocol_eol = "\n"
+local log_path = base .. "/daemon.log"
 
 local function quote(value)
     return string.format("%q", value)
@@ -35,9 +36,26 @@ local function write_file(file, content)
     return true
 end
 
+local function append_log(message)
+    local handle = io.open(log_path, "a")
+    if handle then
+        handle:write(os.date("!%Y-%m-%dT%H:%M:%SZ"), " ", message, "\n")
+        handle:close()
+    end
+end
+
 local function receive_line(client)
-    local value, err, partial = client:receive("*l")
-    return value or partial, err
+    local chunks = {}
+    for _ = 1, 512 do
+        local value, err = client:receive(1)
+        if value then
+            if value == "\n" then return table.concat(chunks), nil end
+            chunks[#chunks + 1] = value
+        else
+            return table.concat(chunks), err
+        end
+    end
+    return table.concat(chunks), "line-too-long"
 end
 
 local function random_hex(bytes)
@@ -96,6 +114,7 @@ local status_path = base .. "/status"
 local lan = read_line("ip -4 route show dev wlan0 scope link | awk 'NR==1 {print $1; exit}'")
 local device_ip = read_line("ip -4 addr show dev wlan0 | awk '/inet / {split($2,a,\"/\"); print a[1]; exit}'")
 if not lan or not device_ip or not exists(hostkey) then os.exit(4) end
+append_log("START ip=" .. tostring(device_ip) .. " lan=" .. tostring(lan))
 
 local function cleanup_pairing(server)
     if server then server:close() end
@@ -131,9 +150,16 @@ end
 
 local function handle_client(client)
     client:settimeout(4)
-    local hello = receive_line(client)
+    local hello, hello_err = receive_line(client)
+    append_log("HELLO len=" .. tostring(#hello) .. " err=" .. tostring(hello_err))
     local op, nonce = hello and hello:match("^%s*(KINDLEPILOT/PAIR1)%s+HELLO%s+([0-9A-Fa-f]+)%s*$")
-    if not op or not nonce or #nonce ~= 32 then client:close(); return false end
+    if not op or not nonce or #nonce ~= 32 then
+        client:send("KINDLEPILOT/PAIR1 ERROR" .. protocol_eol)
+        client:close()
+        append_log("HELLO_INVALID")
+        return false
+    end
+    append_log("HELLO_OK")
     client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. request.device_nonce .. protocol_eol)
     local auth = receive_line(client)
     local aop, received_nonce, public, proof = auth and auth:match("^%s*(KINDLEPILOT/PAIR1)%s+AUTH%s+([0-9A-Fa-f]+)%s+([A-Za-z0-9+/=]+)%s+([0-9a-f]+)%s*$")

@@ -55,7 +55,7 @@ class WirelessTests(unittest.TestCase):
         self.assertNotIn('.. "\\\\n")', daemon)
         self.assertIn('if not op or not nonce or #nonce ~= 32 then', daemon)
         self.assertIn('local ok, result = pcall(handle_client, client)', daemon)
-        self.assertIn('return value or partial, err', daemon)
+        self.assertIn('local value, err = client:receive(1)', daemon)
         self.assertIn('%s+HELLO%s+', daemon)
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
