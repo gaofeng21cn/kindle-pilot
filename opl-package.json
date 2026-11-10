@@ -22,7 +22,7 @@
     "core_module_ids": [
       "kindle-pilot.host.v1"
     ],
-    "optional_skill_policy_ref": "skill/kindle-pilot/SKILL.md",
+    "optional_skill_policy_ref": "skills/kindle-pilot/SKILL.md",
     "optional_skills_installed_by_default": false,
     "default_materialization_policy": "core_skills_only"
   },
@@ -66,8 +66,8 @@
       "scripts/kindle-collections.py",
       "scripts/kindle-mtp.py",
       "scripts/kindle-wireless.py",
-      "skill/kindle-pilot/SKILL.md",
-      "skill/kindle-pilot/agents/openai.yaml",
+      "skills/kindle-pilot/SKILL.md",
+      "skills/kindle-pilot/agents/openai.yaml",
       "src/kindle_companion/__init__.py",
       "src/kindle_companion/__main__.py",
       "src/kindle_companion/cli.py",
@@ -84,7 +84,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:38083da87c4e7004ce395e7c2396561bbc8b09db17979a8b2e9bfafe62e393a1"
+    "digest": "sha256:7203d5cd6530737c81205435005173694fbcd7409d8a26024de40266f0aa81c6"
   },
   "presentation": {
     "display_name_i18n": {

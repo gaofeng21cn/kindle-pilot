@@ -14,7 +14,7 @@ Kindle Pilot 为你的 Agent 提供 Kindle 装机与管理所需的 Skill、工�
 请按 https://github.com/gaofeng21cn/kindle-pilot 的 README 和 Agent 指引，帮我配置已连接的 Kindle：保留原生书库，装好本地阅读、微信读书和番茄小说，需要我触屏或扫码时告诉我，完成后继续。
 ~~~
 
-无需先手动安装 Skill。Agent 会读取本仓库的 [Agent 指引](skill/kindle-pilot/SKILL.md)，检查电脑环境和设备兼容性，再下载材料并推进安装。完整固件版本需要你从 Kindle 的“设备信息”中提供。
+无需先手动安装 Skill。Agent 会读取本仓库的 [Agent 指引](skills/kindle-pilot/SKILL.md)，检查电脑环境和设备兼容性，再下载材料并推进安装。完整固件版本需要你从 Kindle 的“设备信息”中提供。
 
 已经安装 `kindle-pilot` Skill 的用户，可以直接说：
 
@@ -90,7 +90,7 @@ PYTHONPATH=src python3 -m kindle_companion --json software-info
 
 ### 开发入口
 
-- [Agent Skill](skill/kindle-pilot/SKILL.md)：如何接受请求、继续任务和交接触屏步骤。
+- [Agent Skill](skills/kindle-pilot/SKILL.md)：如何接受请求、继续任务和交接触屏步骤。
 - [操作工作流](docs/WORKFLOW.md)：环境准备、命令行工具、传输和验收。
 - [原生合集](docs/NATIVE_COLLECTIONS.md)：整理策略、原生服务写入与实机验收。
 - [无线维护](docs/WIRELESS_MAINTENANCE.md)：临时密钥、MTP 准备、无线连接与会话关闭。
