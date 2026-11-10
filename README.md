@@ -1,8 +1,8 @@
-# KindlePilot
+# Kindle Pilot
 
 **让你的 Agent 帮你装好、用好 Kindle。**
 
-KindlePilot 为你的 Agent 提供 Kindle 装机与管理所需的 Skill、工作流和命令行工具。从识别设备、选择越狱路线，到安装 KOReader、月读和检查阅读效果，由 Agent 推进电脑侧操作，你在需要时完成触屏和扫码。
+Kindle Pilot 为你的 Agent 提供 Kindle 装机与管理所需的 Skill、工作流和命令行工具。从识别设备、选择越狱路线，到安装 KOReader、月读和检查阅读效果，由 Agent 推进电脑侧操作，你在需要时完成触屏和扫码。
 
 ## 一句话开始
 
@@ -26,7 +26,7 @@ $kindle-pilot 帮我配置已连接的 Kindle，用来读本地图书、微信�
 
 ## 能帮你做什么
 
-| 需求 | KindlePilot 的处理方式 |
+| 需求 | Kindle Pilot 的处理方式 |
 | --- | --- |
 | 第一次装机 | 识别设备和固件，选择已收录的越狱路线，准备材料，引导触屏步骤并继续安装阅读环境 |
 | 本地图书和漫画 | 安装 KOReader 与月读，协助整理本地目录并检查代表性内容能否打开 |
@@ -72,6 +72,24 @@ Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重�
 
 ## 给 Agent 和开发者
 
+### 统一应用管理
+
+软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`，当前版本为 `0.1.0`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。
+
+OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。当前是开发来源，可管理安装不等于已经发布 Stable 制品，也不代表当前设备、固件或阅读账号已验收。
+
+在支持原生插件管理的 Codex 中，可添加 `gaofeng21cn/kindle-pilot` marketplace 后安装该插件。需要验证本地源码时，可以把仓库路径作为 marketplace source。更新由同一 marketplace 更新和插件管理器完成；每次操作后用 `codex plugin list --json` 回读实际插件版本与启用状态。卸载只移除插件及其缓存，不删除 Kindle 上的书籍、插件、设备备份或用户任务文件。
+
+从已安装插件根目录或源码根目录读取软件信息：
+
+~~~sh
+PYTHONPATH=src python3 -m kindle_companion --json software-info
+~~~
+
+该入口只读取软件身份，`device_status=not_checked`；设备状态继续由原工作流检查。直接安装的 Python CLI 仍可单独使用，但它不是 Codex 插件安装记录。
+
+### 开发入口
+
 - [Agent Skill](skill/kindle-pilot/SKILL.md)：如何接受请求、继续任务和交接触屏步骤。
 - [操作工作流](docs/WORKFLOW.md)：环境准备、命令行工具、传输和验收。
 - [原生合集](docs/NATIVE_COLLECTIONS.md)：整理策略、原生服务写入与实机验收。
@@ -84,12 +102,13 @@ Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重�
 ~~~sh
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 python3 -m compileall -q src scripts
+python3 scripts/check-package.py
 ~~~
 
 这些检查覆盖主机工具；KC 集成检查需要把清单中校验通过的发布包路径设为 `KINDLE_KC_ARCHIVE`，CI 会准备此文件。设备安装、应用加载和账号阅读分别在实际使用中验收。
 
 ## 来源与许可
 
-KindlePilot 自有代码采用 [MIT 许可证](LICENSE)。阅读环境依赖 KindleModding Véra、KOReader、月读和 `kindle.koplugin` 等上游项目，来源与许可证见[第三方声明](THIRD_PARTY_NOTICES.md)。
+Kindle Pilot 自有代码采用 [MIT 许可证](LICENSE)。阅读环境依赖 KindleModding Véra、KOReader、月读和 `kindle.koplugin` 等上游项目，来源与许可证见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 仓库保存集成代码、工作流、下载地址和校验摘要。越狱书及插件包按需从上游下载，设备资料和登录信息留在用户本地。
