@@ -16,7 +16,7 @@ from .verify import verify_asset
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = PROJECT_ROOT / "manifests" / "compatibility.json"
-DEFAULT_STATE = Path("kindle-companion-state.json")
+DEFAULT_STATE = Path("kindle-pilot-state.json")
 
 
 def _emit(data: Any) -> None:
@@ -33,8 +33,8 @@ def _error(exc: CompanionError, json_mode: bool) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="kindle-companion",
-        description="Agent-first Kindle jailbreak and KOReader workflow manager",
+        prog="kindle-pilot",
+        description="KindlePilot Agent-guided Kindle install and library workflow",
     )
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--json", action="store_true", dest="json_mode")

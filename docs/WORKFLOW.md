@@ -1,21 +1,52 @@
-# Agent workflow
+# KindlePilot 工作流
 
-The normal request shape is:
+KindlePilot 的用户入口是一句话：
 
 ~~~text
-Inspect my connected Kindle and prepare the supported route.
+请使用 $kindle-pilot 管理我当前连接的 Kindle：先识别型号、固件和 USB 状态，选择准确兼容路线；如果支持，就下载并校验官方材料，使用单一 MTP 会话传输；保留原生 Kindle 图书馆，同时配置本地图书、微信读书和番茄小说；在我完成 Kindle 屏幕上的必要步骤后继续，持续推进但不要重复已完成步骤，最后逐项回读验收。
 ~~~
 
-The Agent should:
+用户只需要连接数据线，并在 Agent 停下来时完成 Kindle 屏幕或手机上的动作。用户可以用 "已连接"、"继续"、"JAILBROKEN 已出现"、"扫码成功" 等短消息继续同一个状态；Agent 必须先读取状态再决定下一步。
 
-1. Run read-only USB discovery.
-2. Ask for or read the exact firmware shown by the user.
-3. Resolve the route and stop if the model or firmware is unknown.
-4. Download only the declared upstream assets, then verify SHA-256.
-5. Explain the next Kindle-screen action and wait for the observed evidence.
-6. Use one MTP client and one batch session for a write plan.
-7. Read back storage, paths, and byte sizes after each transfer group.
-8. Record a step only when the evidence matches the step contract.
-9. Treat QR login and book opening as separate runtime checks.
+## 分工
 
-The Agent may resume a workflow from the state JSON. It must not infer a completed manual step from the presence of a downloaded file or from a successful process exit.
+Agent 负责：
+
+1. 只读发现 USB 设备，读取产品名和序列号。
+2. 读取兼容清单，按完整固件版本选择路线。
+3. 下载上游材料并核对 SHA-256。
+4. 用一个 OpenMTP 客户端执行明确的传输批次，并回读远端路径、字节数和存储空间。
+5. 安装 KOReader、月读和 Kindle 书库插件，并检查目标目录。
+6. 记录每个步骤的状态、证据和下一步。
+
+用户负责：
+
+1. 按 Agent 给出的官方链接在 Kindle 屏幕上打开页面；如果路线要求设备端下载，就在 Kindle 上完成。
+2. 完成 Font Calibration，并观察 `RESTARTING GUI` 与 `JAILBROKEN`。
+3. 在搜索框执行 KPM 命令并确认 KOReader 启动。
+4. 使用手机完成微信读书、番茄小说等服务的扫码登录。
+5. 打开代表性书籍，确认本地书、Kindle 书库和账号书架都能实际阅读。
+
+## 状态顺序
+
+~~~text
+USB 可见
+  -> 路线支持
+  -> 资产下载并通过 SHA-256
+  -> MTP 写入并回读
+  -> 用户完成字体设置和 Véra 触发
+  -> 用户确认 JAILBROKEN / KPM
+  -> KOReader 加载
+  -> 月读 / kindle.koplugin 加载
+  -> 微信读书 / 番茄小说登录和书籍行为验收
+~~~
+
+USB 可见不等于设备可写；文件存在不等于应用加载；进程退出码为 0 不等于 MTP 传输成功；二维码显示不等于账号登录成功。每一层都要有自己的回读证据。
+
+## 运行约束
+
+- 路线判断以 `manifests/compatibility.json` 为准。精确型号或固件不在清单中时，停止写入。
+- MTP 连接只保留一个客户端和一个传输批次。出现 `No raw devices found`、`StoreFull`、`SendObjectInfo` 或顶层 `error:` 时，按失败处理并重新建立单一会话。
+- 不删除整个 `documents`、`/koreader`、`/libkh`、未知 `.bin` 或未知用户书籍。
+- 删除或清理前，先列出明确目标；完成后读取远端目录和存储空间。
+- 不把越狱书、设备转储、Cookie、二维码载荷或插件压缩包提交到仓库。

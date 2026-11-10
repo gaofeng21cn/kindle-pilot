@@ -101,7 +101,7 @@ class MtpClient:
     def run(self, commands: Iterable[str], timeout: int = 1800) -> MtpResult:
         command_text = "\n".join(commands) + "\n"
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".mtp.batch", prefix="kindle-companion-", delete=False
+            mode="w", suffix=".mtp.batch", prefix="kindle-pilot-", delete=False
         ) as handle:
             handle.write(command_text)
             batch_path = Path(handle.name)

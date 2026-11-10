@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kindle-agent-companion"
+name = "kindle-pilot"
 version = "0.1.0"
-description = "Agent-first Kindle jailbreak, KOReader, plugin, and library workflow manager"
+description = "KindlePilot: an Agent-guided Kindle install, plugin, and library workflow"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -13,7 +13,7 @@ authors = [{name = "Gaofeng"}]
 dependencies = []
 
 [project.scripts]
-kindle-companion = "kindle_companion.cli:main"
+kindle-pilot = "kindle_companion.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
