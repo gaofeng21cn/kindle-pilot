@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
     inspect = sub.add_parser("inspect", help="group indexed local books without changing collections")
     inspect.add_argument("--snapshot", required=True, type=Path)
     inspect.add_argument("--scope", default="/mnt/us/documents/Downloads/Items01")
+    inspect.add_argument("--native-catalog", type=Path, help="matching catalog export with collection visibility")
     inspect.add_argument("--output", required=True, type=Path)
     probe = sub.add_parser("probe", help="prepare the fixed six-step test for one uncollected local book")
     probe.add_argument("--snapshot", required=True, type=Path)
@@ -50,7 +51,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "stage":
             result = adapter.stage(args.checker, args.output)
         elif args.command == "inspect":
-            report = inventory(snapshot, args.scope)
+            native = json.loads(args.native_catalog.read_text()) if args.native_catalog else None
+            report = inventory(snapshot, args.scope, native)
             write_new(args.output, json.dumps(report, ensure_ascii=False, indent=2).encode("utf-8") + b"\n")
             result = {"series": len(report["series"]), "local_books": sum(len(s["books"]) for s in report["series"]),
                       "unmatched": len(report["unmatched"]), "collections": len(report["collections"]), "output": str(args.output)}

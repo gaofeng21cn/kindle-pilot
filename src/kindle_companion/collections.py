@@ -41,12 +41,22 @@ def series_name(location: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
-def inventory(snapshot: dict[str, Any], scope: str) -> dict[str, Any]:
+def inventory(snapshot: dict[str, Any], scope: str,
+              native_catalog: dict[str, Any] | None = None) -> dict[str, Any]:
     """Use indexed UUIDs and exact source paths; never infer missing files."""
     root = PurePosixPath(scope)
     if not root.is_absolute() or ".." in root.parts or not str(root).startswith("/mnt/us/documents/"):
         raise CompanionError("COLLECTION_SCOPE", "scope must be under /mnt/us/documents/")
     counts = Counter(r["book_uuid"] for r in snapshot["relations"])
+    visible_counts = None
+    if native_catalog is not None:
+        native_pairs = {(r["collection_uuid"], r["book_uuid"]) for r in native_catalog["relations"]}
+        snapshot_pairs = {(r["collection_uuid"], r["book_uuid"]) for r in snapshot["relations"]}
+        if native_pairs != snapshot_pairs:
+            raise CompanionError("COLLECTION_CATALOG_STALE", "catalog and snapshot memberships differ")
+        visibility = {c["uuid"]: c["visible"] for c in native_catalog["collections"]}
+        visible_counts = Counter(r["book_uuid"] for r in snapshot["relations"]
+                                 if visibility.get(r["collection_uuid"]) == 1)
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     excluded: list[dict[str, str]] = []
     for book in snapshot["books"]:
@@ -62,12 +72,15 @@ def inventory(snapshot: dict[str, Any], scope: str) -> dict[str, Any]:
         if name is None:
             excluded.append({"uuid": book["uuid"], "reason": "unrecognized_series", "location": location})
             continue
+        expected_count = visible_counts[book["uuid"]] if visible_counts is not None else None
         groups[name].append({
             "uuid": book["uuid"], "title": book["title"], "location": location,
             "format": path.suffix.lower().lstrip("."),
             "collection_count": book["collection_count"],
             "relation_count": counts[book["uuid"]],
-            "counts_consistent": book["collection_count"] == counts[book["uuid"]],
+            "expected_collection_count": expected_count,
+            "counts_consistent": book["collection_count"] == expected_count if expected_count is not None else None,
+            "count_comparison_requires_visibility": visible_counts is None,
         })
     return {
         "schema": "kindle-pilot-series/v1", "snapshot_id": snapshot["snapshot_id"],
@@ -248,7 +261,7 @@ class KCAdapter:
         for name in selected:
             if name not in groups:
                 raise CompanionError("COLLECTION_SERIES", "series not found in the indexed scope: " + name)
-            if any(not b["counts_consistent"] for b in groups[name]):
+            if any(b["counts_consistent"] is False for b in groups[name]):
                 raise CompanionError("COLLECTION_COUNTS", "native membership counts are inconsistent; no edits planned for: " + name)
             title = prefix + name
             ids = existing.get(title, [])
@@ -262,7 +275,9 @@ class KCAdapter:
             intents.append(self.planner.intent("add_members", cid, {"members": sorted(b["uuid"] for b in groups[name])}))
         plan = self.checked(self.planner.plan, snapshot, intents, adopted, "kindlepilot-" + snapshot["device"]["instance_id"])
         value = plan.data
+        if any(b["count_comparison_requires_visibility"] for name in selected for b in groups[name]):
+            value["blockers"].append({"code": "COLLECTION_VISIBILITY_REQUIRED", "message": "Read native collection visibility before comparing counts.", "collection_uuid": None})
         if self.config.get("status") != "verified":
             value["blockers"].append({"code": "ROUTE_NOT_VERIFIED", "message": "This model/firmware has not passed durable native collection acceptance.", "collection_uuid": None})
-            value = self.protocol.seal(value, "plan_digest")
+        value = self.protocol.seal(value, "plan_digest")
         return value

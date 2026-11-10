@@ -2,6 +2,8 @@
 
 已完成装机、现在要整理原生图书馆的设备，直接使用[原生集合工作流](NATIVE_COLLECTIONS.md)，不重复下列越狱步骤。
 
+需要持续执行和多次回读时，使用[临时无线维护](WIRELESS_MAINTENANCE.md)。MTP 准备和校验入口，用户拔线并点击入口后再连接；不要在 USB 模式下反复尝试 SSH。
+
 KindlePilot 的用户入口是一句话：
 
 ~~~text

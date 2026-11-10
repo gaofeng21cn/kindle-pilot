@@ -45,12 +45,18 @@ class InventoryTests(unittest.TestCase):
     def test_inventory_uses_local_indexed_books_and_reports_count_mismatch(self):
         s = snapshot()
         s["relations"] = [dict(book_uuid="b1")]
-        report = inventory(s, "/mnt/us/documents/Downloads/Items01")
+        native = {"collections": [{"uuid": "existing", "visible": 1}],
+                  "relations": [dict(book_uuid="b1", collection_uuid="existing")]}
+        s["relations"][0]["collection_uuid"] = "existing"
+        report = inventory(s, "/mnt/us/documents/Downloads/Items01", native)
         self.assertEqual(len(report["series"]), 1)
         self.assertEqual({b["uuid"] for b in report["series"][0]["books"]}, {"b0", "b1"})
         by_id = {b["uuid"]: b for b in report["series"][0]["books"]}
         self.assertFalse(by_id["b1"]["counts_consistent"])
         self.assertTrue(by_id["b0"]["counts_consistent"])
+        native["collections"][0]["visible"] = 0
+        report = inventory(s, "/mnt/us/documents/Downloads/Items01", native)
+        self.assertTrue(all(b["counts_consistent"] for b in report["series"][0]["books"]))
 
     def test_scope_traversal_is_rejected(self):
         with self.assertRaises(CompanionError):
