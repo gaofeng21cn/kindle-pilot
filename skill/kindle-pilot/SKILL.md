@@ -3,11 +3,13 @@ name: kindle-pilot
 description: "管理 Kindle 装机、阅读配置和原生合集：USB/MTP 准备，临时密钥 SSH 无线维护，保留已有分类并优化漫画合集，逐项回读验收。"
 ---
 
-# KindlePilot
+# Kindle Pilot
 
 当用户把 Kindle 纳入当前任务并通过 USB 连接电脑时，使用这个 Skill。它的目标是让用户用一句话启动，Agent 在每个需要触屏的节点暂停，收到用户的观察结果后从已保存状态继续。
 
-先定位 KindlePilot 仓库；单独安装了 Skill 但缺少工具时，读取或克隆 https://github.com/gaofeng21cn/kindle-pilot ，从仓库根目录运行工具。已有越狱设备的集合任务直接进入集合工作流，不重复越狱和阅读环境安装。
+先定位 Kindle Pilot 仓库；单独安装了 Skill 但缺少工具时，读取或克隆 https://github.com/gaofeng21cn/kindle-pilot ，从仓库根目录运行工具。已有越狱设备的集合任务直接进入集合工作流，不重复越狱和阅读环境安装。
+
+通过 Codex 插件安装时，Skill、`src/`、`scripts/` 和兼容清单位于同一插件根目录；从当前 `SKILL.md` 向上两级定位根目录，优先使用这份已安装字节。`PYTHONPATH=src python3 -m kindle_companion --json software-info` 可只读核对 Package ID、显示名称和版本。安装、更新、启停与卸载交给宿主插件管理器；软件存在不代表 Kindle 已连接或某个业务步骤已完成。
 
 ## 一句话入口
 

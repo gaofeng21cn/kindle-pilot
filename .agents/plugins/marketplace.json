@@ -1,0 +1,20 @@
+{
+  "name": "kindle-pilot",
+  "interface": {
+    "displayName": "Kindle Pilot"
+  },
+  "plugins": [
+    {
+      "name": "kindle-pilot",
+      "source": {
+        "source": "local",
+        "path": "."
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

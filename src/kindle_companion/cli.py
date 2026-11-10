@@ -34,7 +34,7 @@ def _error(exc: CompanionError, json_mode: bool) -> int:
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="kindle-pilot",
-        description="KindlePilot Agent-guided Kindle install and library workflow",
+        description="Kindle Pilot Agent-guided Kindle install and library workflow",
     )
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     parser.add_argument("--json", action="store_true", dest="json_mode")
@@ -45,6 +45,7 @@ def _build_parser() -> argparse.ArgumentParser:
     probe.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
 
     sub.add_parser("status", help="show persisted workflow state")
+    sub.add_parser("software-info", help="read software identity without accessing a device or task")
 
     step = sub.add_parser("record-step", help="record a workflow observation")
     step.add_argument("step_id")
@@ -71,6 +72,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command == "software-info":
+            from .software import software_info
+
+            _emit(software_info(PROJECT_ROOT))
+            return 0
+
         if args.command == "probe":
             manifest = load_manifest(args.manifest)
             device = discover()

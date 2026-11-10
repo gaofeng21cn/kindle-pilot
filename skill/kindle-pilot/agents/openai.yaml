@@ -1,4 +1,4 @@
 interface:
-  display_name: "KindlePilot"
+  display_name: "Kindle Pilot"
   short_description: "让 Agent 管理 Kindle 装机、无线维护和原生合集"
   default_prompt: "使用 $kindle-pilot 管理我当前连接的 Kindle，保留原生书库并配置本地书、微信读书和番茄小说，持续推进安装并逐项回读验收。"
