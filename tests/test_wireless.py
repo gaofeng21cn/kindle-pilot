@@ -40,23 +40,13 @@ class WirelessTests(unittest.TestCase):
             def __exit__(self, *_): return False
             def settimeout(self, _): pass
             def sendall(self, _): pass
-            def recv(self, _): return b""
+            def makefile(self, _): return __import__("io").BytesIO(b"")
 
         identity = Path(tempfile.mkdtemp()) / "id_ed25519"
         identity.with_suffix(".pub").write_text("ssh-ed25519 " + "A" * 68 + "\n")
         setup = {"pairing_port": 2223, "host_public_b64": "B" * 68}
         with patch("kindle_companion.pairing.socket.create_connection", return_value=EmptyClient()):
             self.assertIsNone(_candidate("192.168.1.2", "192.168.1.187", "A1B2C3D4E5F6", setup, identity))
-
-    def test_plugin_pairing_protocol_uses_real_line_terminators(self):
-        daemon = (ROOT / "assets/kindlepilot.koplugin/pairing_daemon.lua").read_text()
-        self.assertIn('local protocol_eol = "\\n"', daemon)
-        self.assertIn('.. protocol_eol)', daemon)
-        self.assertNotIn('.. "\\\\n")', daemon)
-        self.assertIn('if not nonce or #nonce ~= 32 then', daemon)
-        self.assertIn('local ok, result = pcall(handle_client, client)', daemon)
-        self.assertIn('local value, err = client:receive(1)', daemon)
-        self.assertIn('HELLO%s+', daemon)
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -79,6 +69,8 @@ class WirelessTests(unittest.TestCase):
             self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/pairing_daemon_entry.lua").is_file())
             self.assertTrue((stage / "koreader/KindlePilot/config.lua").is_file())
             self.assertTrue((stage / "koreader/KindlePilot/server_hostkey").is_file())
+            self.assertEqual((stage / "kindlepilot/runtime/dropbear").read_bytes(), b"fixture dropbear")
+            self.assertEqual(setup["dropbear_path"], route.wireless_maintenance["pairing_dropbear_path"])
             self.assertFalse(any("id_ed25519" in name for name in setup["files"]))
             self.assertIn("pairing_port", (stage / "koreader/KindlePilot/config.lua").read_text())
 
@@ -127,6 +119,14 @@ class WirelessTests(unittest.TestCase):
                   + route.wireless_maintenance["dropbear_sha256"] + "  /mnt/us/koreader/dropbear\n")
         with patch("kindle_companion.wireless.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output, "")):
             self.assertTrue(verify_connection(session, route, "192.168.10.21")["identity_verified"])
+        session["dropbear_path"] = route.wireless_maintenance["pairing_dropbear_path"]
+        with patch("kindle_companion.wireless.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output, "")) as run:
+            self.assertTrue(verify_connection(session, route, "192.168.10.21")["identity_verified"])
+            self.assertIn(session["dropbear_path"], run.call_args.args[0][-1])
+        with patch("kindle_companion.wireless.subprocess.run") as run:
+            with self.assertRaises(CompanionError):
+                verify_connection(dict(session, dropbear_path="/tmp/unknown-dropbear"), route, "192.168.10.21")
+            run.assert_not_called()
         with patch("kindle_companion.wireless.subprocess.run", return_value=subprocess.CompletedProcess([], 0, output.replace("a" * 64, "b" * 64), "")):
             with self.assertRaises(CompanionError):
                 verify_connection(session, route, "192.168.10.21")

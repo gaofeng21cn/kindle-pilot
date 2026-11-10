@@ -185,6 +185,7 @@
         "asset": "koreader-kindlehf-v2026.07.1.zip",
         "dropbear_member": "koreader/dropbear",
         "dropbear_path": "/mnt/us/koreader/dropbear",
+        "pairing_dropbear_path": "/mnt/us/kindlepilot/runtime/dropbear",
         "dropbear_sha256": "0e4340bcc9f098f87f0a27bee3f9cb0ee34a40a53e76e7c6367a2644f7898297",
         "port": 2224,
         "default_duration_seconds": 1800,

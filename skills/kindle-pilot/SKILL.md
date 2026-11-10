@@ -93,3 +93,5 @@ description: "管理 Kindle 装机、阅读配置和原生合集：USB/MTP 准�
 读取 `docs/WIRELESS_MAINTENANCE.md` 和 `wireless_maintenance`。首次使用用 `prepare-plugin`/`transfer-plugin` 通过 USB 安装 KOReader `KindlePilot.koplugin`、独立配对守护进程和持久设备主机身份；以后用户在 KOReader 菜单生成一次性配对码，Agent 用 `pair` 在局域网内完成 HMAC 配对，再用 Dropbear 建立临时会话。配对守护进程不依赖 KOReader UI 进程，USB/MTP 不应与无线 SSH 同时使用。连接必须核对固定主机公钥、设备摘要、固件和 Dropbear。客户端私钥、配对记录及设备记录留在忽略目录；不输出私钥、账号令牌。
 
 会话只允许本次主机来源、禁密码及转发、默认 30 分钟自动关闭；完成后主动 `stop` 并回读停止状态。换网络、换主机、组件或固件变化时重新准备，不沿用写死 IP。无线通道可用不自动授权任意书库写入或其他型号。
+
+已核实的当前设备地址优先用 `pair --host`，不要每次扫描整个网段。主机执行真实 Lua/TCP 协议测试后再上传修复，不以语法检查或源码关键词断言代替握手测试。USB 更新要先退出 KOReader、回到原生系统；先完成已授权的本机修复和验证，再一次性交接更新。错误认证只计入完整的认证尝试，空连接不消耗配对次数。失败时保留会话和诊断，先查看网络错误及插件“查看维护状态”，不反复让用户重新插拔。

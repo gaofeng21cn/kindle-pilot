@@ -70,8 +70,6 @@ if config_ok and type(loaded_config) == "table" then
 end
 
 local hostkey = base .. "/server_hostkey"
-local auth_path = base .. "/settings/SSH/authorized_keys"
-local pid_path = base .. "/dropbear.pid"
 local daemon_pid_path = base .. "/pairing-daemon.pid"
 local request_path = base .. "/pairing.request.lua"
 local daemon_entry = path .. "/plugins/KindlePilot.koplugin/pairing_daemon_entry.lua"
@@ -93,27 +91,39 @@ function KindlePilot:_show(text, timeout)
     UIManager:show(self.info)
 end
 
-function KindlePilot:_stop_daemon()
-    if exists(daemon_pid_path) then
-        local pid = read_line("cat " .. quote(daemon_pid_path))
-        if pid and pid:match("^%d+$") then run("kill " .. pid .. " 2>/dev/null || :") end
-    end
-    run("rm -f " .. quote(daemon_pid_path) .. " " .. quote(request_path))
+function KindlePilot:_stop_service()
+    return run("sh " .. quote(base .. "/stop.sh"))
 end
 
-function KindlePilot:_stop_ssh()
-    if exists(pid_path) then
-        local pid = read_line("cat " .. quote(pid_path))
-        if pid and pid:match("^%d+$") then run("kill " .. pid .. " 2>/dev/null || :") end
+function KindlePilot:show_status()
+    local file = io.open(base .. "/status", "r")
+    local status = file and file:read("*a") or "STATE=stopped"
+    if file then file:close() end
+    local fields = {}
+    for key, value in status:gmatch("([%w_]+)=([^\n]*)") do fields[key] = value end
+    local labels = {
+        pairing = _("正在等待电脑配对。"),
+        running = _("无线维护已开启。"),
+        stopped = _("无线维护未开启。"),
+        error = _("无线维护启动失败。"),
+    }
+    local text = labels[fields.STATE] or labels.stopped
+    if fields.ERROR then text = text .. "\n" .. _("诊断代码：") .. fields.ERROR end
+    if fields.IP then text = text .. "\n" .. _("设备地址：") .. fields.IP end
+    self:_show(_("KindlePilot 服务状态：\n\n") .. text, 15)
+end
+
+function KindlePilot:_await_ready(code, expires_at, checks)
+    local state = read_line("cat " .. quote(base .. "/status") .. " 2>/dev/null")
+    if state == "STATE=pairing" then
+        self:_show(string.format(
+            _("KindlePilot 配对码：\n\n%s\n\n请把此配对码告诉 Agent。\n%d 秒后过期。\n\n请保持 Wi-Fi 开启、USB 断开。"),
+            code, math.max(0, expires_at - os.time())), math.max(1, expires_at - os.time()))
+    elseif state == "STATE=error" or checks <= 0 then
+        self:show_status()
+    else
+        UIManager:scheduleIn(0.25, function() self:_await_ready(code, expires_at, checks - 1) end)
     end
-    local source = read_line("awk -F= '/^SOURCE=/ {print $2}' " .. quote(base .. "/status"))
-    if source then
-        run("iptables -D INPUT -p tcp -s " .. quote(source .. "/32") .. " --dport " .. config.ssh_port .. " -j ACCEPT 2>/dev/null || :")
-        run("iptables -D INPUT -p tcp ! -s " .. quote(source .. "/32") .. " --dport " .. config.ssh_port .. " -j DROP 2>/dev/null || :")
-        run("iptables -D OUTPUT -p tcp -d " .. quote(source .. "/32") .. " --sport " .. config.ssh_port .. " -j ACCEPT 2>/dev/null || :")
-    end
-    run("rm -f " .. quote(auth_path) .. " " .. quote(pid_path) .. " " .. quote(base .. "/timer.pid"))
-    write_file(base .. "/status", "STATE=stopped\n")
 end
 
 function KindlePilot:start_pairing()
@@ -121,10 +131,7 @@ function KindlePilot:start_pairing()
         self:_show(_("KindlePilot 尚未与这台电脑配对，请先通过 USB 安装一次配对身份。"), 8)
         return
     end
-    if exists(daemon_pid_path) or exists(pid_path) then
-        self:_stop_daemon()
-        self:_stop_ssh()
-    end
+    if not self:_stop_service() then self:_show(_("无法停止上次的维护服务。"), 8); return end
     local digits = tonumber(config.pairing_code_digits) or 6
     digits = math.max(5, math.min(6, math.floor(digits)))
     local code = random_hex_digits(digits)
@@ -136,23 +143,21 @@ function KindlePilot:start_pairing()
         self:_show(_("无法写入 KindlePilot 配对请求。"), 8)
         return
     end
-    local command = "cd " .. quote(path) .. " && nohup ./luajit " .. quote(daemon_entry)
+    run("chmod 600 " .. quote(request_path))
+    local command = "cd " .. quote(path) .. " && ( nohup ./luajit " .. quote(daemon_entry)
         .. " " .. quote(daemon_script) .. " " .. quote(base) .. " " .. quote(path)
-        .. " > " .. quote(base .. "/daemon.log") .. " 2>&1 </dev/null & echo $! > " .. quote(daemon_pid_path)
+        .. " > " .. quote(base .. "/daemon.log") .. " 2>&1 </dev/null & echo $! > " .. quote(daemon_pid_path) .. " )"
     if not run(command) then
-        self:_stop_daemon()
+        self:_stop_service()
         self:_show(_("无法启动 KindlePilot 无线维护服务。"), 8)
         return
     end
     self.pairing_code = code
-    self:_show(string.format(
-        _("KindlePilot 配对码：\n\n%s\n\n请把此配对码告诉 Agent。\n%d 秒后过期。\n\n服务会在 KOReader 退出后继续运行。"),
-        code, tonumber(config.pairing_code_ttl_seconds) or 120), (tonumber(config.pairing_code_ttl_seconds) or 120) + 4)
+    self:_await_ready(code, expires_at, 12)
 end
 
 function KindlePilot:stop_maintenance()
-    self:_stop_daemon()
-    self:_stop_ssh()
+    self:_stop_service()
     self:_show(_("KindlePilot 无线维护已停止。"), 4)
 end
 
@@ -163,6 +168,10 @@ function KindlePilot:addToMainMenu(menu_items)
             {
                 text = _("配对此电脑并开始维护"),
                 callback = function() self:start_pairing() end,
+            },
+            {
+                text = _("查看维护状态"),
+                callback = function() self:show_status() end,
             },
             {
                 text = _("停止无线维护"),

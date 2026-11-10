@@ -1,5 +1,6 @@
 local ffi = require("ffi")
 local socket = require("socket")
+local bit = require("bit")
 
 local base = arg[2]
 local root = arg[3]
@@ -80,7 +81,7 @@ local function hmac_sha1(key, message)
         unsigned char *HMAC(const EVP_MD *, const void *, int, const unsigned char *, size_t, unsigned char *, unsigned int *);
         ]]
     end)
-    local ssl_ok, ssl = pcall(ffi.loadlib, "ssl", "60")
+    local ssl_ok, ssl = pcall(ffi.loadlib, "crypto", "57")
     if not ssl_ok then return nil end
     local output = ffi.new("unsigned char[20]")
     local length = ffi.new("unsigned int[1]")
@@ -94,7 +95,7 @@ local function constant_equal(left, right)
     if type(left) ~= "string" or type(right) ~= "string" or #left ~= #right then return false end
     local difference = 0
     for i = 1, #left do
-        difference = (difference + math.abs((string.byte(left, i) or 0) - (string.byte(right, i) or 0))) % 256
+        difference = bit.bor(difference, bit.bxor(string.byte(left, i), string.byte(right, i)))
     end
     return difference == 0
 end
@@ -104,7 +105,8 @@ local function valid_public(value)
 end
 
 local function private_ipv4(value)
-    local a, b, c, d = value and value:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$")
+    if type(value) ~= "string" then return false end
+    local a, b, c, d = value:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$")
     a, b, c, d = tonumber(a), tonumber(b), tonumber(c), tonumber(d)
     return a and b and c and d and a <= 255 and b <= 255 and c <= 255 and d <= 255
         and (a == 10 or (a == 192 and b == 168) or (a == 172 and b >= 16 and b <= 31))
@@ -118,14 +120,18 @@ local pid_path = base .. "/dropbear.pid"
 local status_path = base .. "/status"
 local lan = read_line("ip -4 route show dev wlan0 scope link | awk 'NR==1 {print $1; exit}'")
 local device_ip = read_line("ip -4 addr show dev wlan0 | awk '/inet / {split($2,a,\"/\"); print a[1]; exit}'")
-if not lan or not device_ip or not exists(hostkey) then os.exit(4) end
+if not lan or not device_ip or not exists(hostkey) then
+    write_file(status_path, "STATE=error\nERROR=WIFI_OR_IDENTITY_MISSING\n")
+    os.exit(4)
+end
 append_log("START ip=" .. tostring(device_ip) .. " lan=" .. tostring(lan))
 
 local function cleanup_pairing(server)
     if server then server:close() end
     run("iptables -D INPUT -p tcp -s " .. quote(lan) .. " --dport " .. config.pairing_port .. " -j ACCEPT 2>/dev/null || :")
     run("iptables -D INPUT -p tcp ! -s " .. quote(lan) .. " --dport " .. config.pairing_port .. " -j DROP 2>/dev/null || :")
-    run("rm -f " .. quote(base .. "/pairing.request.lua") .. " " .. quote(base .. "/pairing-daemon.pid"))
+    run("iptables -D OUTPUT -p tcp -d " .. quote(lan) .. " --sport " .. config.pairing_port .. " -j ACCEPT 2>/dev/null || :")
+    run("rm -f " .. quote(base .. "/pairing.request.lua") .. " " .. quote(base .. "/pairing-daemon.pid") .. " " .. quote(base .. "/pairing.network"))
 end
 
 local function ssh_firewall(source, add)
@@ -135,6 +141,7 @@ local function ssh_firewall(source, add)
     run("iptables " .. action .. " OUTPUT -p tcp -d " .. quote(source .. "/32") .. " --sport " .. config.ssh_port .. " -j ACCEPT 2>/dev/null || :")
 end
 
+local session_id = random_hex(16)
 local function start_ssh(public, source)
     if not private_ipv4(source) or not valid_public(public) then return false end
     run("mkdir -p " .. quote(base .. "/settings/SSH"))
@@ -142,14 +149,26 @@ local function start_ssh(public, source)
     if not file then return false end
     file:write("ssh-ed25519 " .. public .. " kindlepilot-pair" .. protocol_eol)
     file:close()
+    run("chmod 700 " .. quote(base) .. " " .. quote(base .. "/settings") .. " " .. quote(base .. "/settings/SSH"))
     run("chmod 600 " .. quote(auth_path) .. " " .. quote(hostkey))
+    local dropbear = config.dropbear_path or (root .. "/dropbear")
+    if not run("chmod 700 " .. quote(dropbear)) then os.remove(auth_path); return false end
     ssh_firewall(source, true)
-    local command = "cd " .. quote(root) .. " && ./dropbear -E -s -j -k -r " .. quote(hostkey)
+    -- KOReader's patched Dropbear reads settings/SSH/authorized_keys relative
+    -- to its working directory. Isolate our temporary key below this base.
+    local command = "cd " .. quote(base) .. " && LD_LIBRARY_PATH=" .. quote(root .. "/libs") .. " " .. quote(dropbear) .. " -E -s -j -k -r " .. quote(hostkey)
         .. " -p " .. quote(device_ip .. ":" .. tostring(config.ssh_port)) .. " -P " .. quote(pid_path)
-    if not run(command) then ssh_firewall(source, false); return false end
+        .. " > " .. quote(base .. "/dropbear.log") .. " 2>&1"
+    if not run(command) then
+        ssh_firewall(source, false)
+        os.remove(auth_path)
+        return false
+    end
+    write_file(base .. "/session.id", session_id .. "\n")
     write_file(status_path, "STATE=running\nSOURCE=" .. source .. "\nPORT=" .. tostring(config.ssh_port) .. "\n")
-    local timer = "sleep " .. tostring(config.session_duration_seconds) .. "; if [ -r " .. quote(pid_path) .. " ]; then kill $(cat " .. quote(pid_path) .. ") 2>/dev/null || :; fi; rm -f " .. quote(auth_path) .. " " .. quote(pid_path) .. "; printf 'STATE=stopped\\n' > " .. quote(status_path)
-    run("nohup sh -c " .. quote(timer) .. " >/dev/null 2>&1 </dev/null &")
+    local timer = "nohup sh " .. quote(base .. "/stop.sh") .. " --timer " .. quote(session_id)
+        .. " " .. tostring(config.session_duration_seconds) .. " >/dev/null 2>&1 </dev/null & echo $! > " .. quote(base .. "/timer.pid")
+    if not run(timer) then run("sh " .. quote(base .. "/stop.sh")); return false end
     return true
 end
 
@@ -157,45 +176,70 @@ local function handle_client(client)
     client:settimeout(4)
     local hello, hello_err = receive_line(client)
     append_log("HELLO len=" .. tostring(#hello) .. " err=" .. tostring(hello_err))
-    local nonce = hello and hello:match("HELLO%s+([0-9A-Fa-f]+)")
+    local nonce = hello:match("^KINDLEPILOT/PAIR1 HELLO ([0-9A-Fa-f]+)\r?$")
     if not nonce or #nonce ~= 32 then
         client:send("KINDLEPILOT/PAIR1 ERROR" .. protocol_eol)
         client:close()
         append_log("HELLO_INVALID")
-        return false
+        return false, false
     end
     append_log("HELLO_OK")
     client:send("KINDLEPILOT/PAIR1 CHALLENGE " .. request.device_nonce .. protocol_eol)
     local auth = receive_line(client)
-    local received_nonce, public, proof = auth and auth:match("AUTH%s+([0-9A-Fa-f]+)%s+([A-Za-z0-9+/=]+)%s+([0-9a-f]+)")
+    -- A logical expression collapses a function's multiple return values in
+    -- Lua. Call match directly so all three authentication fields survive.
+    local received_nonce, public, proof = auth:match("^KINDLEPILOT/PAIR1 AUTH ([0-9A-Fa-f]+) ([A-Za-z0-9+/=]+) ([0-9a-f]+)\r?$")
     local expected = hmac_sha1(request.code, nonce .. "|" .. tostring(public) .. "|" .. request.device_nonce)
     local valid = received_nonce == nonce and valid_public(public) and proof and #proof == 40 and expected and constant_equal(expected, proof)
     local source = client:getpeername()
-    if valid and source and start_ssh(public, source) then
-        client:send("KINDLEPILOT/PAIR1 OK " .. random_hex(16) .. " " .. config.host_public_b64 .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. protocol_eol)
+    if valid and source then
+        if not start_ssh(public, source) then
+            append_log("SSH_START_FAILED")
+            client:send("KINDLEPILOT/PAIR1 ERROR SSH_START_FAILED" .. protocol_eol)
+            client:close()
+            write_file(status_path, "STATE=error\nERROR=SSH_START_FAILED\n")
+            return false, true
+        end
+        client:send("KINDLEPILOT/PAIR1 OK " .. session_id .. " " .. config.host_public_b64 .. " " .. tostring(config.ssh_port) .. " " .. tostring(config.session_duration_seconds) .. protocol_eol)
         client:close()
-        return true
+        append_log("PAIRED")
+        return true, true
     end
-    client:send("KINDLEPILOT/PAIR1 ERROR" .. protocol_eol)
+    append_log("AUTH_REJECTED")
+    client:send("KINDLEPILOT/PAIR1 ERROR AUTH_REJECTED" .. protocol_eol)
     client:close()
-    return false
+    return false, true
 end
 
+write_file(base .. "/pairing.network", lan .. "\n")
 run("iptables -I INPUT -p tcp ! -s " .. quote(lan) .. " --dport " .. config.pairing_port .. " -j DROP 2>/dev/null || :")
 run("iptables -I INPUT -p tcp -s " .. quote(lan) .. " --dport " .. config.pairing_port .. " -j ACCEPT 2>/dev/null || :")
-local server = socket.bind("*", config.pairing_port)
-if not server then cleanup_pairing(nil); os.exit(4) end
+run("iptables -I OUTPUT -p tcp -d " .. quote(lan) .. " --sport " .. config.pairing_port .. " -j ACCEPT 2>/dev/null || :")
+local server, bind_err = socket.bind(device_ip, config.pairing_port)
+if not server then
+    append_log("BIND_FAILED " .. tostring(bind_err))
+    cleanup_pairing(nil)
+    write_file(status_path, "STATE=error\nERROR=BIND_FAILED\n")
+    os.exit(4)
+end
 server:settimeout(0.25)
+write_file(status_path, "STATE=pairing\nIP=" .. device_ip .. "\n")
 local attempts = 0
 local expiry = tonumber(request.expires_at) or (os.time() + (config.pairing_code_ttl_seconds or 120))
 local paired = false
 while os.time() < expiry and attempts < (config.pairing_max_attempts or 3) do
     local client = server:accept()
     if client then
-        local ok, result = pcall(handle_client, client)
-        attempts = attempts + 1
+        local ok, result, attempted = pcall(handle_client, client)
+        if attempted or not ok then attempts = attempts + 1 end
         if ok and result then paired = true; break end
-        if not ok then pcall(function() client:close() end) end
+        if not ok then
+            append_log("CLIENT_ERROR " .. tostring(result))
+            pcall(function()
+                client:send("KINDLEPILOT/PAIR1 ERROR INTERNAL" .. protocol_eol)
+                client:close()
+            end)
+        end
     end
     socket.sleep(0.25)
 end

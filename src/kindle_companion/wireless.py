@@ -234,9 +234,13 @@ def ssh_arguments(session: dict[str, Any], host: str) -> list[str]:
 
 
 def verify_connection(session: dict[str, Any], route: Route, host: str) -> dict[str, Any]:
+    config = route.wireless_maintenance
+    dropbear_path = session.get("dropbear_path", config["dropbear_path"])
+    if dropbear_path not in {config["dropbear_path"], config.get("pairing_dropbear_path")}:
+        raise CompanionError("WIRELESS_IDENTITY", "session runtime path is not declared by the route")
     command = ("printf 'FIRMWARE='; cat /etc/prettyversion.txt; printf '\\nSERIAL='; "
                "sha256sum /proc/usid; printf 'DROPBEAR='; sha256sum "
-               + shlex.quote(route.wireless_maintenance["dropbear_path"]))
+               + shlex.quote(dropbear_path))
     result = subprocess.run(ssh_arguments(session, host) + [command], capture_output=True, text=True, timeout=12)
     if result.returncode:
         raise CompanionError("WIRELESS_CONNECTION", result.stderr.strip() or "SSH connection failed")
@@ -250,4 +254,5 @@ def verify_connection(session: dict[str, Any], route: Route, host: str) -> dict[
             or dropbear != route.wireless_maintenance["dropbear_sha256"]):
         raise CompanionError("WIRELESS_IDENTITY", "SSH connected but device identity or component changed")
     return {"host": host, "ssh_connected": True, "host_key_pinned": True,
-            "identity_verified": True, "firmware": fw.group(), "native_collection_write_implied": False}
+            "identity_verified": True, "firmware": fw.group(), "dropbear_path": dropbear_path,
+            "dropbear_sha256": dropbear, "native_collection_write_implied": False}

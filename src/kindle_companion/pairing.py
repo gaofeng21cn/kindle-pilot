@@ -62,15 +62,31 @@ def _plugin_config(values: dict[str, Any]) -> bytes:
     return "".join(lines).encode()
 
 
-def _stop_script(base: str, ssh_port: int) -> bytes:
+def _stop_script(base: str, ssh_port: int, pairing_port: int = 2223) -> bytes:
     return f'''#!/bin/sh
 set -eu
 BASE={base!r}
 PID="$BASE/dropbear.pid"
 DAEMON_PID="$BASE/pairing-daemon.pid"
 AUTH="$BASE/settings/SSH/authorized_keys"
-if [ -r "$PID" ]; then kill "$(cat "$PID")" 2>/dev/null || :; fi
-if [ -r "$DAEMON_PID" ]; then kill "$(cat "$DAEMON_PID")" 2>/dev/null || :; fi
+if [ "${{1:-}}" = --timer ]; then
+  sleep "$3"
+  [ "$(cat "$BASE/session.id" 2>/dev/null || :)" = "$2" ] || exit 0
+fi
+kill_owned() {{
+  [ -r "$1" ] || return 0
+  OWNED_PID=$(cat "$1")
+  case "$OWNED_PID" in ''|*[!0-9]*) return 0;; esac
+  [ -r "/proc/$OWNED_PID/cmdline" ] || return 0
+  case "$(tr '\\000' ' ' < "/proc/$OWNED_PID/cmdline")" in
+    *"$2"*)
+      pkill -TERM -P "$OWNED_PID" 2>/dev/null || :
+      kill "$OWNED_PID" 2>/dev/null || :;;
+  esac
+}}
+if [ "${{1:-}}" != --timer ]; then kill_owned "$BASE/timer.pid" "$BASE/stop.sh --timer"; fi
+kill_owned "$PID" "$BASE/dropbear.pid"
+kill_owned "$DAEMON_PID" 'KindlePilot.koplugin/pairing_daemon_entry.lua'
 SOURCE=$(awk -F= '/^SOURCE=/ {{print $2}}' "$BASE/status" 2>/dev/null || :)
 case "$SOURCE" in ''|*[!0-9.]*) SOURCE=;; esac
 if [ -n "$SOURCE" ]; then
@@ -78,7 +94,14 @@ if [ -n "$SOURCE" ]; then
   iptables -D INPUT -p tcp ! -s "$SOURCE/32" --dport {ssh_port} -j DROP 2>/dev/null || :
   iptables -D OUTPUT -p tcp -d "$SOURCE/32" --sport {ssh_port} -j ACCEPT 2>/dev/null || :
 fi
-rm -f "$PID" "$DAEMON_PID" "$AUTH" "$BASE/timer.pid" "$BASE/pairing.request.lua"
+LAN=$(cat "$BASE/pairing.network" 2>/dev/null || :)
+case "$LAN" in ''|*[!0-9./]*) LAN=;; esac
+if [ -n "$LAN" ]; then
+  iptables -D INPUT -p tcp -s "$LAN" --dport {pairing_port} -j ACCEPT 2>/dev/null || :
+  iptables -D INPUT -p tcp ! -s "$LAN" --dport {pairing_port} -j DROP 2>/dev/null || :
+  iptables -D OUTPUT -p tcp -d "$LAN" --sport {pairing_port} -j ACCEPT 2>/dev/null || :
+fi
+rm -f "$PID" "$DAEMON_PID" "$AUTH" "$BASE/timer.pid" "$BASE/pairing.request.lua" "$BASE/pairing.network" "$BASE/session.id"
 printf 'STATE=stopped\\n' > "$BASE/status"
 sync
 '''.encode()
@@ -101,7 +124,8 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
     if sha256_file(archive) != resolve_asset(route, config["asset"]).sha256:
         raise CompanionError("WIRELESS_ASSET_HASH", "KOReader archive differs from compatibility manifest")
     with zipfile.ZipFile(archive) as source:
-        if hashlib.sha256(source.read(config["dropbear_member"])).hexdigest() != config["dropbear_sha256"]:
+        dropbear_bytes = source.read(config["dropbear_member"])
+        if hashlib.sha256(dropbear_bytes).hexdigest() != config["dropbear_sha256"]:
             raise CompanionError("WIRELESS_DROPBEAR_HASH", "embedded Dropbear differs from the qualified component")
     output.mkdir(parents=True, exist_ok=True); output.chmod(0o700)
     setup_id = uuid.uuid4().hex
@@ -112,11 +136,14 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
     host_public_b64 = base64.b64encode(host_public).decode()
     base = "/mnt/us/koreader/KindlePilot"
     stage = output / "stage"
+    dropbear_path = config["pairing_dropbear_path"]
+    write_new(stage / Path(dropbear_path).relative_to("/mnt/us"), dropbear_bytes)
     plugin_stage = stage / "koreader/plugins/KindlePilot.koplugin"
     for name in ("_meta.lua", "main.lua", "pairing_daemon_entry.lua", "pairing_daemon.lua"):
         write_new(plugin_stage / name, (PLUGIN_ROOT / name).read_bytes())
     write_new(stage / "koreader/KindlePilot/config.lua", _plugin_config({
         "pairing_port": config["pairing_port"], "ssh_port": config["port"],
+        "dropbear_path": dropbear_path,
         "pairing_code_digits": config["pairing_code_digits"],
         "pairing_code_ttl_seconds": config["pairing_code_ttl_seconds"],
         "pairing_max_attempts": config["pairing_max_attempts"],
@@ -124,13 +151,14 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
     }))
     write_new(stage / "koreader/KindlePilot/server_hostkey", host_key)
     write_new(stage / "koreader/KindlePilot/server_hostkey.pub", (host_public_b64 + "\n").encode())
-    write_new(stage / "koreader/KindlePilot/stop.sh", _stop_script(base, config["port"]))
+    write_new(stage / "koreader/KindlePilot/stop.sh", _stop_script(base, config["port"], config["pairing_port"]))
     (stage / "koreader/KindlePilot/server_hostkey").chmod(0o600)
     files = {str(p.relative_to(stage)): sha256_file(p) for p in stage.rglob("*") if p.is_file()}
     setup = {"schema": "kindle-pilot-koreader-pairing/v1", "setup_id": setup_id,
              "route": route.id, "firmware": firmware_match.group(), "serial_sha256": serial,
              "pairing_port": config["pairing_port"], "ssh_port": config["port"],
              "duration_seconds": duration, "remote_base": base, "stage": str(stage.resolve()),
+             "dropbear_path": dropbear_path,
              "host_public_b64": host_public_b64, "host_key_sha256": hashlib.sha256(host_key).hexdigest(),
              "files": files, "device_started": False}
     write_new(output / "setup.json", (json.dumps(setup, indent=2) + "\n").encode())
@@ -147,30 +175,47 @@ def _network(source_ip: str, value: str | None) -> ipaddress.IPv4Network:
     return network
 
 
-def _candidate(host: str, source_ip: str, code: str, setup: dict[str, Any], identity: Path) -> dict[str, Any] | None:
+def _candidate(host: str, source_ip: str, code: str, setup: dict[str, Any], identity: Path,
+               strict: bool = False) -> dict[str, Any] | None:
     nonce = uuid.uuid4().hex; public = pairing_public_b64(identity.with_suffix(".pub").read_bytes())
     try:
-        with socket.create_connection((host, int(setup["pairing_port"])), timeout=1.2) as client:
-            client.settimeout(2.5); client.sendall(f"KINDLEPILOT/PAIR1 HELLO {nonce}\n".encode())
-            challenge_lines = client.recv(256).decode(errors="replace").splitlines()
-            if not challenge_lines: return None
-            challenge = challenge_lines[0].split()
-            if len(challenge) != 3 or challenge[:2] != ["KINDLEPILOT/PAIR1", "CHALLENGE"]: return None
-            proof = pairing_proof(code, nonce, public, challenge[2])
-            client.sendall(f"KINDLEPILOT/PAIR1 AUTH {nonce} {public} {proof}\n".encode())
-            response_lines = client.recv(512).decode(errors="replace").splitlines()
-            if not response_lines: return None
-            response = response_lines[0].split()
-            if len(response) != 6 or response[:2] != ["KINDLEPILOT/PAIR1", "OK"]: return None
+        with socket.create_connection((host, int(setup["pairing_port"])), timeout=1.2,
+                                      source_address=(source_ip, 0)) as client:
+            client.settimeout(8)
+            with client.makefile("rb") as stream:
+                def read_line() -> list[str]:
+                    raw = stream.readline(513)
+                    if not raw.endswith(b"\n") or len(raw) > 512:
+                        raise CompanionError("WIRELESS_PAIRING_PROTOCOL", "pairing peer closed or sent an incomplete line")
+                    fields = raw.decode("ascii").split()
+                    if fields[:2] == ["KINDLEPILOT/PAIR1", "ERROR"]:
+                        reason = fields[2] if len(fields) == 3 and re.fullmatch(r"[A-Z_]+", fields[2]) else "PROTOCOL"
+                        raise CompanionError("WIRELESS_PAIRING_REJECTED", "Kindle pairing error: " + reason)
+                    return fields
+
+                client.sendall(f"KINDLEPILOT/PAIR1 HELLO {nonce}\n".encode())
+                challenge = read_line()
+                if len(challenge) != 3 or challenge[:2] != ["KINDLEPILOT/PAIR1", "CHALLENGE"]:
+                    raise CompanionError("WIRELESS_PAIRING_PROTOCOL", "invalid pairing challenge")
+                proof = pairing_proof(code, nonce, public, challenge[2])
+                client.sendall(f"KINDLEPILOT/PAIR1 AUTH {nonce} {public} {proof}\n".encode())
+                response = read_line()
+            if len(response) != 6 or response[:2] != ["KINDLEPILOT/PAIR1", "OK"]:
+                raise CompanionError("WIRELESS_PAIRING_PROTOCOL", "invalid pairing result")
             _, _, session, host_public, port, duration = response
-            if host_public != setup["host_public_b64"]: return None
+            if host_public != setup["host_public_b64"]:
+                raise CompanionError("WIRELESS_PAIRING_IDENTITY", "device host key differs from the installed identity")
             return {"host": host, "session_id": session, "host_public_b64": host_public,
                     "port": int(port), "duration_seconds": int(duration)}
-    except (OSError, UnicodeError, ValueError, CompanionError, IndexError): return None
+    except (OSError, UnicodeError, ValueError, CompanionError) as exc:
+        if strict:
+            if isinstance(exc, CompanionError): raise
+            raise CompanionError("WIRELESS_PAIRING_CONNECTION", str(exc)) from exc
+        return None
 
 
 def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: str,
-                 code: str, network: str | None = None) -> dict[str, Any]:
+                 code: str, network: str | None = None, host: str | None = None) -> dict[str, Any]:
     configured_digits = int(route.wireless_maintenance["pairing_code_digits"])
     normalized_code = code.strip().upper()
     if len(normalized_code) == 12 and configured_digits == 6:
@@ -182,11 +227,17 @@ def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: s
     if setup.get("route") != route.id: raise CompanionError("WIRELESS_PAIRING_IDENTITY", "setup route differs")
     net = _network(source_ip, network); output.mkdir(parents=True, exist_ok=True)
     if any(output.iterdir()): raise CompanionError("WIRELESS_OUTPUT", "use a new pairing session directory")
+    output.chmod(0o700)
     identity = output / "id_ed25519"
     subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "kindlepilot-session-" + uuid.uuid4().hex,
                     "-f", str(identity)], check=True, capture_output=True)
-    with ThreadPoolExecutor(max_workers=24) as pool:
-        results = [result for result in pool.map(lambda address: _candidate(str(address), source_ip, normalized_code, setup, identity), net.hosts()) if result]
+    if host is not None:
+        if ipaddress.IPv4Address(host) not in net:
+            raise CompanionError("WIRELESS_HOST", "pairing host must be in the selected LAN subnet")
+        results = [_candidate(host, source_ip, normalized_code, setup, identity, strict=True)]
+    else:
+        with ThreadPoolExecutor(max_workers=24) as pool:
+            results = [result for result in pool.map(lambda address: _candidate(str(address), source_ip, normalized_code, setup, identity), net.hosts()) if result]
     if len(results) != 1: raise CompanionError("WIRELESS_PAIRING_DISCOVERY", "expected one paired Kindle")
     paired = results[0]; alias = "kindlepilot-plugin-" + setup["setup_id"]
     known_hosts = output / "known_hosts"
@@ -196,6 +247,7 @@ def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: s
                "serial_sha256": setup["serial_sha256"], "source_ip": source_ip,
                "bind_interface": setup.get("bind_interface", "en0"), "port": paired["port"],
                "remote_base": setup["remote_base"], "identity_file": str(identity.resolve()),
+               "dropbear_path": setup["dropbear_path"],
                "known_hosts": str(known_hosts.resolve()), "host_key_alias": alias,
                "host": paired["host"], "duration_seconds": paired["duration_seconds"],
                "pairing_code_used": True, "transport": "koreader_plugin_pairing",

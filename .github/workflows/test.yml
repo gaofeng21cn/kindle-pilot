@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install Lua daemon test runtime
+        run: sudo apt-get update -qq && sudo apt-get install -y luajit lua-socket libssl-dev
       - name: Fetch pinned KC adapter for headless integration tests
         run: |
           python - <<'PY'

@@ -52,6 +52,7 @@ def main() -> int:
     pair.add_argument("--code", required=True)
     pair.add_argument("--interface", default="en0")
     pair.add_argument("--network")
+    pair.add_argument("--host", help="previously observed Kindle IPv4 address; skip subnet discovery")
     args = parser.parse_args()
     try:
         manifest = load_manifest(args.manifest)
@@ -78,7 +79,7 @@ def main() -> int:
                 raise CompanionError("WIRELESS_ROUTE", "KOReader pairing setup route not found")
             source = subprocess.check_output(["ipconfig", "getifaddr", args.interface], text=True).strip()
             setup = dict(setup, bind_interface=args.interface)
-            result = pair_session(route, setup, args.output, source, args.code, args.network)
+            result = pair_session(route, setup, args.output, source, args.code, args.network, args.host)
             print(json.dumps({"session": str(args.output / "session.json"), "host": result["host"],
                               "identity_verified": result["identity_verified"], "device_started": True}))
             return 0
