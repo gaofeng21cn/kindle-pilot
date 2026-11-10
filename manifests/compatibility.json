@@ -201,7 +201,7 @@
         },
         "acceptance": "Colorsoft 5.20.1.0.2; ephemeral client/server Ed25519 keys; strict host pin; MTP readback; connect/discover; 12-second expiry test confirmed server stop, credential removal and firewall cleanup; production session 1800 seconds",
         "pairing_port": 2223,
-        "pairing_code_digits": 12,
+        "pairing_code_digits": 6,
         "pairing_code_ttl_seconds": 120,
         "pairing_max_attempts": 3,
         "host_key_scope": "persistent_per_device",

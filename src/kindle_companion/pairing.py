@@ -24,7 +24,7 @@ from .wireless import dropbear_host_key, verify_connection
 PLUGIN_ROOT = Path("assets/kindlepilot.koplugin")
 
 
-def validate_pairing_code(code: str, digits: int = 12) -> str:
+def validate_pairing_code(code: str, digits: int = 6) -> str:
     value = code.strip().upper()
     if not re.fullmatch(r"[0-9A-F]{" + str(digits) + r"}", value):
         raise CompanionError("WIRELESS_PAIRING_CODE", f"pairing code must be {digits} hexadecimal characters")
@@ -39,14 +39,16 @@ def pairing_public_b64(public_key: bytes) -> str:
 
 
 def pairing_proof(code: str, client_nonce: str, client_public_b64: str, device_nonce: str) -> str:
-    validate_pairing_code(code)
+    normalized_code = code.strip().upper()
+    if len(normalized_code) not in (6, 12) or not re.fullmatch(r"[0-9A-F]+", normalized_code):
+        raise CompanionError("WIRELESS_PAIRING_CODE", "pairing code must be 6 hexadecimal characters")
     if (not re.fullmatch(r"[0-9a-fA-F]{32}", client_nonce)
             or not re.fullmatch(r"[0-9a-fA-F]{32}", device_nonce)):
         raise CompanionError("WIRELESS_PAIRING_NONCE", "pairing nonce must be 16 random bytes in hex")
     if not re.fullmatch(r"[A-Za-z0-9+/=]{40,180}", client_public_b64):
         raise CompanionError("WIRELESS_PAIRING_KEY", "pairing public key is not valid base64")
     message = f"{client_nonce}|{client_public_b64}|{device_nonce}".encode()
-    return hmac.new(code.upper().encode(), message, hashlib.sha1).hexdigest()
+    return hmac.new(normalized_code.encode(), message, hashlib.sha1).hexdigest()
 
 
 def _plugin_config(values: dict[str, Any]) -> bytes:
@@ -113,6 +115,7 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
         write_new(plugin_stage / name, (PLUGIN_ROOT / name).read_bytes())
     write_new(stage / "koreader/KindlePilot/config.lua", _plugin_config({
         "pairing_port": config["pairing_port"], "ssh_port": config["port"],
+        "pairing_code_digits": config["pairing_code_digits"],
         "pairing_code_ttl_seconds": config["pairing_code_ttl_seconds"],
         "pairing_max_attempts": config["pairing_max_attempts"],
         "session_duration_seconds": duration, "host_public_b64": host_public_b64,
@@ -166,7 +169,14 @@ def _candidate(host: str, source_ip: str, code: str, setup: dict[str, Any], iden
 
 def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: str,
                  code: str, network: str | None = None) -> dict[str, Any]:
-    validate_pairing_code(code, int(route.wireless_maintenance["pairing_code_digits"]))
+    configured_digits = int(route.wireless_maintenance["pairing_code_digits"])
+    normalized_code = code.strip().upper()
+    if len(normalized_code) == 12 and configured_digits == 6:
+        # Accept one-time codes from the pre-0.2.0 plugin while the device is
+        # being updated; new plugin instances emit six-character codes.
+        validate_pairing_code(normalized_code, 12)
+    else:
+        validate_pairing_code(normalized_code, configured_digits)
     if setup.get("route") != route.id: raise CompanionError("WIRELESS_PAIRING_IDENTITY", "setup route differs")
     net = _network(source_ip, network); output.mkdir(parents=True, exist_ok=True)
     if any(output.iterdir()): raise CompanionError("WIRELESS_OUTPUT", "use a new pairing session directory")
@@ -174,7 +184,7 @@ def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: s
     subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "kindlepilot-session-" + uuid.uuid4().hex,
                     "-f", str(identity)], check=True, capture_output=True)
     with ThreadPoolExecutor(max_workers=24) as pool:
-        results = [result for result in pool.map(lambda address: _candidate(str(address), source_ip, code, setup, identity), net.hosts()) if result]
+        results = [result for result in pool.map(lambda address: _candidate(str(address), source_ip, normalized_code, setup, identity), net.hosts()) if result]
     if len(results) != 1: raise CompanionError("WIRELESS_PAIRING_DISCOVERY", "expected one paired Kindle")
     paired = results[0]; alias = "kindlepilot-plugin-" + setup["setup_id"]
     known_hosts = output / "known_hosts"

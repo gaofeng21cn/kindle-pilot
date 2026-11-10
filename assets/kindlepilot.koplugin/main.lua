@@ -27,6 +27,7 @@ local config_path = base .. "/config.lua"
 local config = {
     pairing_port = 2223,
     ssh_port = 2224,
+    pairing_code_digits = 6,
     pairing_code_ttl_seconds = 120,
     pairing_max_attempts = 3,
     session_duration_seconds = 1800,
@@ -93,6 +94,11 @@ local function random_hex(bytes)
     local output = {}
     for i = 1, #raw do output[#output + 1] = string.format("%02X", string.byte(raw, i)) end
     return table.concat(output)
+end
+
+local function random_hex_digits(digits)
+    local bytes = math.ceil(digits / 2)
+    return string.sub(random_hex(bytes), 1, digits)
 end
 
 local function hmac_sha1(key, message)
@@ -260,7 +266,9 @@ function KindlePilot:start_pairing()
     if not server then self:_show(_("无法启动 KindlePilot 配对：") .. tostring(err), 8); return end
     self.server = server
     self.server:settimeout(0)
-    self.pairing_code = random_hex(6)
+    local pairing_digits = tonumber(config.pairing_code_digits) or 6
+    pairing_digits = math.max(5, math.min(6, math.floor(pairing_digits)))
+    self.pairing_code = random_hex_digits(pairing_digits)
     self.device_nonce = random_hex(16)
     self.expires_at = os.time() + config.pairing_code_ttl_seconds
     self.attempts = 0

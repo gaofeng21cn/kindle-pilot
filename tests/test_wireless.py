@@ -26,10 +26,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class WirelessTests(unittest.TestCase):
     def test_koreader_pairing_proof_keeps_screen_code_off_network(self):
-        proof = pairing_proof("A1B2C3D4E5F6", "a" * 32, "A" * 68, "b" * 32)
+        proof = pairing_proof("A1B2C3", "a" * 32, "A" * 68, "b" * 32)
         self.assertEqual(len(proof), 40)
-        self.assertNotIn("A1B2C3D4E5F6", proof)
-        self.assertEqual(validate_pairing_code("a1b2c3d4e5f6"), "A1B2C3D4E5F6")
+        self.assertNotIn("A1B2C3", proof)
+        self.assertEqual(validate_pairing_code("a1b2c3"), "A1B2C3")
+        self.assertEqual(validate_pairing_code("a1b2c3d4e5f6", 12), "A1B2C3D4E5F6")
         with self.assertRaises(CompanionError):
             validate_pairing_code("1234")
 

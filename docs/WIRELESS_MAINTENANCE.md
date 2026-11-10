@@ -24,7 +24,7 @@ python3 scripts/kindle-wireless.py transfer-plugin \
 
 1. 拔掉 USB，保持 Kindle 和 Mac 在同一局域网。
 2. 打开 KOReader，在主菜单选择 **KindlePilot wireless maintenance → Pair this computer and start maintenance**。
-3. KOReader 显示一次性 12 位配对码，把它告诉 Agent：`KOReader 已显示配对码：XXXXXXXXXXXX`。
+3. KOReader 显示一次性 6 位十六进制配对码，把它告诉 Agent：`KOReader 已显示配对码：XXXXXX`。旧版插件生成的 12 位配对码在迁移期间仍可使用一次。
 4. Agent 在局域网内发现 Kindle，用 HMAC 挑战响应配对，再用 KOReader 的 Dropbear 建立临时 SSH。
 
 ```sh
