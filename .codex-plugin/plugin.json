@@ -7,7 +7,7 @@
   },
   "repository": "https://github.com/gaofeng21cn/kindle-pilot",
   "license": "MIT",
-  "skills": "./skill/",
+  "skills": "./skills/",
   "interface": {
     "displayName": "Kindle Pilot",
     "shortDescription": "Agent-guided Kindle setup and library maintenance.",

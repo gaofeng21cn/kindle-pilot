@@ -26,9 +26,13 @@ def main():
     assert authority["name"] == plugin["name"] and authority["version"] == plugin["version"]
     assert authority["extensions"]["com.openai"]["interface"] == plugin["interface"]
     assert manifest["display_name"] == plugin["interface"]["displayName"] == marketplace["interface"]["displayName"]
+    assert plugin["skills"] == "./skills/"
+    skill_ids = sorted(path.parent.name for path in (root / "skills").glob("*/SKILL.md"))
+    assert sorted(manifest["exports"]["core_skill_ids"]) == skill_ids, "Core skills must use skills/<id>/SKILL.md"
+    assert (root / manifest["exports"]["optional_skill_policy_ref"]).is_file()
     paths = sorted([
         ".agents/plugins/marketplace.json", ".codex-plugin/plugin.json", "plugin.json", "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md", "pyproject.toml",
-        *[str(file.relative_to(root)) for directory in ["src", "skill", "scripts", "docs", "manifests", "assets"]
+        *[str(file.relative_to(root)) for directory in ["src", "skills", "scripts", "docs", "manifests", "assets"]
           for file in (root / directory).rglob("*") if file.is_file() and "__pycache__" not in file.parts and file.suffix not in [".pyc", ".pyo"]],
     ])
     digest = hashlib.sha256()
