@@ -17,7 +17,7 @@ PYTHONPATH=src python3 -m kindle_companion --json capabilities
 | `kindle.account.reading.v1` | 微信读书、番茄小说的扫码登录和代表性阅读验收 | Agent 不读取 Cookie，也不把二维码显示当成登录成功 |
 | `kindle.library.preservation.v1` | 原生图书馆、推送书籍、`.sdr` 和来源文件保护 | 不搬书、不取消订阅、不删除未知文件 |
 | `kindle.native.collections.v1` | 盘点、方案、创建、添加、显式重命名和本任务合集收敛 | 数据库只读；写入由 Kindle 原生服务完成 |
-| `kindle.wireless.maintenance.v1` | KOReader 配对插件、临时 SSH、动态主机绑定、身份校验和到期清理 | 复用 KOReader SSH/Dropbear；无密码、无转发、不自动授予合集写入权 |
+| `kindle.wireless.maintenance.v1` | KOReader 配对入口、独立配对守护进程、临时 SSH、动态主机绑定、身份校验和到期清理 | 复用 KOReader SSH/Dropbear；无密码、无转发、不自动授予合集写入权 |
 
 能力目录声明的是可调用接口和权限边界，具体型号与固件状态仍由 [`manifests/compatibility.json`](../manifests/compatibility.json) 决定。当前 Colorsoft `5.20.1.0.2` 的无线维护与原生合集新增路径已完成设备验收；其他型号不能据此推断支持。
 

@@ -167,7 +167,7 @@
         "en-US": "Temporary wireless maintenance"
       },
       "kind": "transport",
-      "owner": "kindle_companion.pairing + KOReader SSH.koplugin",
+      "owner": "kindle_companion.pairing + KindlePilot pairing daemon + KOReader SSH.koplugin",
       "entrypoints": [
         "scripts/kindle-wireless.py prepare-plugin",
         "scripts/kindle-wireless.py transfer-plugin",

@@ -60,6 +60,8 @@
       "assets/README.md",
       "assets/kindlepilot.koplugin/_meta.lua",
       "assets/kindlepilot.koplugin/main.lua",
+      "assets/kindlepilot.koplugin/pairing_daemon.lua",
+      "assets/kindlepilot.koplugin/pairing_daemon_entry.lua",
       "assets/wireless-cover.png",
       "assets/wireless-cover.prompt.txt",
       "capabilities/kindle-pilot.json",
@@ -98,7 +100,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:6c108d65bf5e4867b5b6c03b6534e7fc58ecec97a7b7d63c058562b9d703c64f"
+    "digest": "sha256:f2793700a5c5f451b59472433fc341417474fdad86f9e10b9b393680317e6e55"
   },
   "presentation": {
     "display_name_i18n": {

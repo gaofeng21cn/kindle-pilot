@@ -49,14 +49,14 @@ class WirelessTests(unittest.TestCase):
             self.assertIsNone(_candidate("192.168.1.2", "192.168.1.187", "A1B2C3D4E5F6", setup, identity))
 
     def test_plugin_pairing_protocol_uses_real_line_terminators(self):
-        plugin = (ROOT / "assets/kindlepilot.koplugin/main.lua").read_text()
-        self.assertIn('local protocol_eol = "\\n"', plugin)
-        self.assertIn('.. protocol_eol)', plugin)
-        self.assertNotIn('.. "\\\\n")', plugin)
-        self.assertIn('if not op or not nonce or #nonce ~= 32 then', plugin)
-        self.assertIn('local ok = pcall(function() self:_handle_client(client) end)', plugin)
-        self.assertIn('return value or partial, err', plugin)
-        self.assertIn('%s+HELLO%s+', plugin)
+        daemon = (ROOT / "assets/kindlepilot.koplugin/pairing_daemon.lua").read_text()
+        self.assertIn('local protocol_eol = "\\n"', daemon)
+        self.assertIn('.. protocol_eol)', daemon)
+        self.assertNotIn('.. "\\\\n")', daemon)
+        self.assertIn('if not op or not nonce or #nonce ~= 32 then', daemon)
+        self.assertIn('local ok, result = pcall(handle_client, client)', daemon)
+        self.assertIn('return value or partial, err', daemon)
+        self.assertIn('%s+HELLO%s+', daemon)
 
     def test_koreader_pairing_setup_contains_plugin_and_no_client_private_key(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -75,6 +75,8 @@ class WirelessTests(unittest.TestCase):
             setup = prepare_plugin(route, archive, snapshot, root / "setup", 10)
             stage = Path(setup["stage"])
             self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/main.lua").is_file())
+            self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/pairing_daemon.lua").is_file())
+            self.assertTrue((stage / "koreader/plugins/KindlePilot.koplugin/pairing_daemon_entry.lua").is_file())
             self.assertTrue((stage / "koreader/KindlePilot/config.lua").is_file())
             self.assertTrue((stage / "koreader/KindlePilot/server_hostkey").is_file())
             self.assertFalse(any("id_ed25519" in name for name in setup["files"]))

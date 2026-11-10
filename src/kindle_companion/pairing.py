@@ -67,8 +67,10 @@ def _stop_script(base: str, ssh_port: int) -> bytes:
 set -eu
 BASE={base!r}
 PID="$BASE/dropbear.pid"
+DAEMON_PID="$BASE/pairing-daemon.pid"
 AUTH="$BASE/settings/SSH/authorized_keys"
 if [ -r "$PID" ]; then kill "$(cat "$PID")" 2>/dev/null || :; fi
+if [ -r "$DAEMON_PID" ]; then kill "$(cat "$DAEMON_PID")" 2>/dev/null || :; fi
 SOURCE=$(awk -F= '/^SOURCE=/ {{print $2}}' "$BASE/status" 2>/dev/null || :)
 case "$SOURCE" in ''|*[!0-9.]*) SOURCE=;; esac
 if [ -n "$SOURCE" ]; then
@@ -76,7 +78,7 @@ if [ -n "$SOURCE" ]; then
   iptables -D INPUT -p tcp ! -s "$SOURCE/32" --dport {ssh_port} -j DROP 2>/dev/null || :
   iptables -D OUTPUT -p tcp -d "$SOURCE/32" --sport {ssh_port} -j ACCEPT 2>/dev/null || :
 fi
-rm -f "$PID" "$AUTH" "$BASE/timer.pid"
+rm -f "$PID" "$DAEMON_PID" "$AUTH" "$BASE/timer.pid" "$BASE/pairing.request.lua"
 printf 'STATE=stopped\\n' > "$BASE/status"
 sync
 '''.encode()
@@ -111,7 +113,7 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
     base = "/mnt/us/koreader/KindlePilot"
     stage = output / "stage"
     plugin_stage = stage / "koreader/plugins/KindlePilot.koplugin"
-    for name in ("_meta.lua", "main.lua"):
+    for name in ("_meta.lua", "main.lua", "pairing_daemon_entry.lua", "pairing_daemon.lua"):
         write_new(plugin_stage / name, (PLUGIN_ROOT / name).read_bytes())
     write_new(stage / "koreader/KindlePilot/config.lua", _plugin_config({
         "pairing_port": config["pairing_port"], "ssh_port": config["port"],
