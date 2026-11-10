@@ -76,7 +76,7 @@ Agent 会在交接时说明是否需要退出阅读器、拔下数据线或重�
 
 软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`，当前版本为 `0.2.0`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记为 Package 能力模块。
 
-OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。当前是开发来源，可管理安装不等于已经发布 Stable 制品，也不代表当前设备、固件或阅读账号已验收。
+OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。正式软件源使用版本固定的 OPL Package 制品，`latest-stable` 只用于发现已发布版本；设备、固件和阅读账号的实际可用性继续按各自工作流验收。
 
 在支持原生插件管理的 Codex 中，可添加 `gaofeng21cn/kindle-pilot` marketplace 后安装该插件。需要验证本地源码时，可以把仓库路径作为 marketplace source。更新由同一 marketplace 更新和插件管理器完成；每次操作后用 `codex plugin list --json` 回读实际插件版本与启用状态。卸载只移除插件及其缓存，不删除 Kindle 上的书籍、插件、设备备份或用户任务文件。
 
@@ -108,6 +108,8 @@ python3 scripts/check-package.py
 ~~~
 
 这些检查覆盖主机工具；KC 集成检查需要把清单中校验通过的发布包路径设为 `KINDLE_KC_ARCHIVE`，CI 会准备此文件。设备安装、应用加载和账号阅读分别在实际使用中验收。
+
+正式发布先通过上述检查，再将 annotated `v<version>` tag 绑定到精确 owner 提交。Framework 从该提交生成并校验目录、文件摘要和载荷，使用其 `publish-package.yml` 发布不可变版本并推进 `latest-stable`；目录版本、tag 和制品来源必须一致。仓库源码 marketplace 仍可用于开发接入，不能代替正式制品回读。
 
 ## 来源与许可
 

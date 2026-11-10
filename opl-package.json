@@ -9,7 +9,7 @@
   "source_repo": "https://github.com/gaofeng21cn/kindle-pilot.git",
   "visibility": "public",
   "package_role": "capability_package",
-  "publication_channel_admission": "development_only",
+  "publication_channel_admission": "admitted",
   "capability_abi": {
     "id": "kindle-pilot.host.v1",
     "version": "1.0.0",
@@ -45,7 +45,7 @@
       "plugin_selector": "kindle-pilot@kindle-pilot",
       "executor_route": "codex_cli",
       "marketplace_source": "gaofeng21cn/kindle-pilot",
-      "publication_ref": null
+      "publication_ref": "ghcr.io/gaofeng21cn/one-person-lab-packages/kindle-pilot:latest-stable"
     }
   },
   "content_lock": {
@@ -98,7 +98,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:ad772344f9f01019042b220f3e23eacd9873da46e226ca243097a8a46870da03"
+    "digest": "sha256:bd9d5fdcc343c10d1877e709a18b057970538ef422e2fa7161d167cf42f1218d"
   },
   "presentation": {
     "display_name_i18n": {
@@ -113,6 +113,7 @@
       "zh-CN": "使用 Kindle Pilot 管理 Kindle，按兼容清单推进并逐项回读设备状态。",
       "en-US": "Use Kindle Pilot to manage a Kindle through compatibility checks and explicit device readback."
     },
-    "home_shortcuts": []
+    "home_shortcuts": [],
+    "software_type": "agent"
   }
 }
