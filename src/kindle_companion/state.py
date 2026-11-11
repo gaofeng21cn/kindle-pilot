@@ -81,11 +81,23 @@ STEPS: tuple[Step, ...] = (
         ("install_koreader",),
     ),
     Step(
+        "install_wireless",
+        "Provision the wireless pairing plugin with the reading environment",
+        "agent",
+        ("install_koreader",),
+    ),
+    Step(
         "runtime_verify",
         "Verify KOReader, Moon, and Kindle Library runtime behavior",
         "user",
         ("install_plugins",),
         manual=True,
+    ),
+    Step(
+        "wireless_verify",
+        "Pair over Wi-Fi and verify device identity and session cleanup",
+        "agent",
+        ("install_wireless",),
     ),
     Step(
         "account_login",

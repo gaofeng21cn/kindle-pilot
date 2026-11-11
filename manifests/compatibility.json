@@ -215,6 +215,22 @@
           "pairing": "screen_code_hmac",
           "device_acceptance": "2026-11-11 Colorsoft 5.20.1.0.2: screen pairing and strict SSH host pin verified; firmware, serial and pinned Dropbear read back; six decimal digits including a leading zero paired on device; 12-second expiry removed credentials, listeners and firewall rules; plugin updated over Wi-Fi"
         }
+      },
+      "reading_environment": {
+        "koreader_install": "kpm_then_confirm_launch",
+        "plugins": [
+          {
+            "asset": "book.koplugin-v0.5.6.zip",
+            "directory": "book.koplugin"
+          },
+          {
+            "asset": "kindle-koplugin-armv7.zip",
+            "directory": "kindle.koplugin"
+          }
+        ],
+        "wireless_maintenance_default": true,
+        "existing_plugins": "preserve_and_reuse",
+        "acceptance": "Host bundle preparation and simulated MTP readback are tested; application load, pairing and account reading require separate device acceptance."
       }
     }
   ]

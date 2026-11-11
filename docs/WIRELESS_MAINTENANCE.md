@@ -6,7 +6,9 @@ KOReader 的 SSH 插件已经支持公钥登录和 key-only 模式。KindlePilot
 
 ## 一次性安装
 
-第一次迁移到配对模式时，电脑侧准备插件和设备主机身份：
+新设备的标准装机流程通过 `scripts/kindle-reading-setup.py prepare` / `transfer`，在配置月读时一并装好无线插件、独立配对服务和设备主机身份，命令见[阅读环境与无线一次配置](WORKFLOW.md#阅读环境与无线一次配置)。输入来自装机 `probe` 状态，无需为无线安装先做原生合集盘点。默认启用这项准备；用户可以选择不安装。
+
+已有阅读环境、只需补装无线组件时，仍可使用独立入口：
 
 ```sh
 python3 scripts/kindle-wireless.py prepare-plugin \
@@ -20,14 +22,16 @@ python3 scripts/kindle-wireless.py transfer-plugin \
 
 这一步只需要 USB。它把 `KindlePilot.koplugin`（含独立配对守护进程）、设备主机密钥和配置放入 `koreader/plugins/` 与 `koreader/KindlePilot/`；客户端私钥不会传到 Kindle。早期版本曾写入 `koreader/settings/KindlePilot/`，新版插件会兼容读取这一路径，因此更新时不会要求重新配对。
 
+Agent 必须保留本机 `setup.json`，其中记录固定设备公钥和身份摘要。新装机记录使用 USB 序列号摘要，SSH 回读时去掉 `/proc/usid` 的行尾再比较；旧记录继续按原始文件摘要核对。换对话可复用该记录，换电脑可可信迁移记录。IP 或网卡变化只影响当次发现和来源绑定，不要求重装身份。
+
 维护使用的 Dropbear 从摘要完全匹配清单的发布包中提取，写入 `wireless_maintenance.pairing_dropbear_path`。会话记录绑定该路径；Agent 回读其摘要，再核对固件和设备身份。KOReader 自带的 SSH 文件与登录配置由 KOReader 继续管理。
 
 ## 以后每次使用
 
-1. 拔掉 USB，保持 Kindle 和 Mac 在同一局域网。
+1. 保持 USB 断开，Kindle 和 Mac 在同一局域网；无需为了生成临时客户端密钥先接一次 USB。
 2. 打开 KOReader，在主菜单选择 **KindlePilot 无线维护 → 配对此电脑并开始维护**。插件会启动独立配对服务；即使之后 KOReader 返回 Kindle 原生桌面，服务仍会继续运行。
 3. KOReader 显示一次性 6 位纯数字配对码，把它告诉 Agent，例如：`KOReader 已显示配对码：005219`，保留开头的零。旧版安装记录仍可用原有的 6 位或 12 位十六进制码完成迁移；新版记录只接受纯数字。
-4. Agent 优先直连上次已核实的设备地址；地址变化时在局域网内发现 Kindle。通过 HMAC 挑战响应配对，再用 Dropbear 建立临时 SSH。
+4. Agent 读取本机安装记录，选择当前可达网卡，优先直连上次已核实的设备地址；地址变化时在局域网内发现 Kindle。通过 HMAC 挑战响应配对，再用 Dropbear 建立临时 SSH。
 
 ```sh
 python3 scripts/kindle-wireless.py pair \
@@ -61,10 +65,10 @@ python3 scripts/kindle-wireless.py stop \
 
 ## 能力边界
 
-- USB：只负责首次安装/更新插件和主机身份。
+- USB：负责首次安装；后续更新可在已验收的无线会话中完成。保留固定设备身份，不为每次维护重建密钥。
 - KOReader：负责显示配对码并启动配对守护进程。
 - KindlePilot 配对守护进程：独立处理配对协议，不依赖 KOReader UI 进程。
-- `SSH.koplugin`/Dropbear：负责 SSH 服务和公钥认证。
+- KOReader 发布包中的 Dropbear：负责 SSH 服务和公钥认证；无需另行打开 KOReader 自带 SSH 插件。
 - KindlePilot：负责配对协议、临时授权、来源限制、超时清理和 Agent 回读。
 - 原生 Kindle 图书馆中的旧 `KindlePilot - Wireless` 入口属于旧版兼容载体；KOReader 插件验收后可以清理。
 

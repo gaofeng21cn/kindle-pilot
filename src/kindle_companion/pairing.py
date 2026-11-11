@@ -21,7 +21,7 @@ from .models import CompanionError, Route
 from .verify import sha256_file
 from .wireless import dropbear_host_key, verify_connection
 
-PLUGIN_ROOT = Path("assets/kindlepilot.koplugin")
+PLUGIN_ROOT = Path(__file__).resolve().parents[2] / "assets/kindlepilot.koplugin"
 
 
 def validate_pairing_code(code: str, digits: int = 6, hexadecimal: bool = False) -> str:
@@ -159,6 +159,7 @@ def prepare_plugin(route: Route, archive: Path, snapshot: dict[str, Any], output
     files = {str(p.relative_to(stage)): sha256_file(p) for p in stage.rglob("*") if p.is_file()}
     setup = {"schema": "kindle-pilot-koreader-pairing/v1", "setup_id": setup_id,
              "route": route.id, "firmware": firmware_match.group(), "serial_sha256": serial,
+             "serial_hash_mode": snapshot.get("serial_hash_mode", "proc_usid"),
              "pairing_port": config["pairing_port"], "ssh_port": config["port"],
              "duration_seconds": duration, "remote_base": base, "stage": str(stage.resolve()),
              "dropbear_path": dropbear_path,
@@ -250,6 +251,7 @@ def pair_session(route: Route, setup: dict[str, Any], output: Path, source_ip: s
     session = {"schema": "kindle-pilot-wireless-session/v2", "session_id": paired["session_id"],
                "setup_id": setup["setup_id"], "route": route.id, "firmware": setup["firmware"],
                "serial_sha256": setup["serial_sha256"], "source_ip": source_ip,
+               "serial_hash_mode": setup.get("serial_hash_mode", "proc_usid"),
                "bind_interface": setup.get("bind_interface", "en0"), "port": paired["port"],
                "remote_base": setup["remote_base"], "identity_file": str(identity.resolve()),
                "dropbear_path": setup["dropbear_path"],

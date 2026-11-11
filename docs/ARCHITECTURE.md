@@ -6,6 +6,7 @@
 - kindle_companion.compat owns version comparison and route decisions.
 - kindle_companion.state owns the workflow receipt; caches and terminal output do not replace it.
 - kindle_companion.mtp owns single-session MTP command construction and transfer error interpretation.
+- kindle_companion.reading_setup owns the first-install plugin batch after KOReader is confirmed: manifest-pinned Moon, Kindle Library and wireless provisioning. It derives identity from probe state, preserves existing plugins and host keys, and records file readback separately from application, pairing and account acceptance.
 - kindle_companion.wireless and kindle_companion.pairing own the host-side session/pairing protocol, while KOReader `KindlePilot.koplugin` owns the on-device code display and starts the independent pairing daemon. The daemon owns temporary authorization and cleanup outside the KOReader UI event loop. KOReader's SSH/Dropbear remains the SSH server owner; wireless transport does not grant collection-edit capability.
 - kindle_companion.collection_additions owns additive membership payloads, visibility-aware count checks, exact task-created collection retirement and whole-plan readback. The native Kindle service owns database mutations.
 - capabilities/kindle-pilot.json owns the exported KindlePilot capability-module catalog; `kindle_companion.capabilities` is its read-only discovery surface. Package exports and plugin presentation must match this catalog.
