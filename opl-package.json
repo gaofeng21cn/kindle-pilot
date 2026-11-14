@@ -4,7 +4,7 @@
   "display_name": "Kindle Pilot",
   "description": "Agent-guided Kindle setup, reading configuration, and library maintenance.",
   "publisher": "gaofeng21cn",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "source": "first_party_repo_local",
   "source_repo": "https://github.com/gaofeng21cn/kindle-pilot.git",
   "visibility": "public",
@@ -102,7 +102,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:6026fc4f539c378dc18e6abb64666a7bab109037e9b936cc1f95c603997c0b98"
+    "digest": "sha256:8c1ed34bc2882d6c16b1da2a79c85fc102754ec2a1ec20040c9d3c6ecee26596"
   },
   "presentation": {
     "display_name_i18n": {
