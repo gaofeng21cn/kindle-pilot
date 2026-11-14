@@ -9,7 +9,7 @@
   "source_repo": "https://github.com/gaofeng21cn/kindle-pilot.git",
   "visibility": "public",
   "package_role": "capability_package",
-  "publication_channel_admission": "development_only",
+  "publication_channel_admission": "admitted",
   "capability_abi": {
     "id": "kindle-pilot.host.v1",
     "version": "1.0.0",
@@ -45,7 +45,7 @@
       "plugin_selector": "kindle-pilot@kindle-pilot",
       "executor_route": "codex_cli",
       "marketplace_source": "gaofeng21cn/kindle-pilot",
-      "publication_ref": null
+      "publication_ref": "ghcr.io/gaofeng21cn/one-person-lab-packages/kindle-pilot:latest-stable"
     }
   },
   "content_lock": {
