@@ -1,4 +1,12 @@
-# Kindle Pilot
+<p align="center">
+  <img src="assets/branding/kindle-pilot-logo.png" alt="Kindle Pilot logo" width="132" />
+</p>
+
+<p align="center"><a href="./README.en.md">English</a> | <strong>中文</strong></p>
+
+<h1 align="center">Kindle Pilot</h1>
+
+<p align="center"><strong>让你的 Agent 帮你装好、用好 Kindle。</strong></p>
 
 **让你的 Agent 帮你装好、用好 Kindle。**
 
@@ -82,7 +90,7 @@ $kindle-pilot 我的 Kindle 配对码是 005219，帮我检查阅读环境和书
 
 ### 统一应用管理
 
-软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`，当前版本为 `0.2.0`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记为 Package 能力模块。
+软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记为 Package 能力模块。
 
 OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。正式软件源使用版本固定的 OPL Package 制品，`latest-stable` 只用于发现已发布版本；设备、固件和阅读账号的实际可用性继续按各自工作流验收。
 

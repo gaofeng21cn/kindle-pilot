@@ -38,7 +38,7 @@ def main():
     assert sorted(manifest["exports"]["core_skill_ids"]) == skill_ids, "Core skills must use skills/<id>/SKILL.md"
     assert (root / manifest["exports"]["optional_skill_policy_ref"]).is_file()
     paths = sorted([
-        ".agents/plugins/marketplace.json", ".codex-plugin/plugin.json", "plugin.json", "LICENSE", "README.md", "THIRD_PARTY_NOTICES.md", "pyproject.toml",
+        ".agents/plugins/marketplace.json", ".codex-plugin/plugin.json", "plugin.json", "LICENSE", "README.md", "README.en.md", "THIRD_PARTY_NOTICES.md", "pyproject.toml",
         *[str(file.relative_to(root)) for directory in ["src", "skills", "scripts", "docs", "manifests", "assets", "capabilities"]
           for file in (root / directory).rglob("*") if file.is_file() and "__pycache__" not in file.parts and file.suffix not in [".pyc", ".pyo"]],
     ])

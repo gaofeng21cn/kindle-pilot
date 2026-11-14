@@ -4,7 +4,7 @@
   "display_name": "Kindle Pilot",
   "description": "Agent-guided Kindle setup, reading configuration, and library maintenance.",
   "publisher": "gaofeng21cn",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "source": "first_party_repo_local",
   "source_repo": "https://github.com/gaofeng21cn/kindle-pilot.git",
   "visibility": "public",
@@ -55,9 +55,12 @@
       ".agents/plugins/marketplace.json",
       ".codex-plugin/plugin.json",
       "LICENSE",
+      "README.en.md",
       "README.md",
       "THIRD_PARTY_NOTICES.md",
       "assets/README.md",
+      "assets/branding/README.md",
+      "assets/branding/kindle-pilot-logo.png",
       "assets/kindlepilot.koplugin/_meta.lua",
       "assets/kindlepilot.koplugin/main.lua",
       "assets/kindlepilot.koplugin/pairing_daemon.lua",
@@ -102,7 +105,7 @@
       "src/kindle_companion/verify.py",
       "src/kindle_companion/wireless.py"
     ],
-    "digest": "sha256:8c1ed34bc2882d6c16b1da2a79c85fc102754ec2a1ec20040c9d3c6ecee26596"
+    "digest": "sha256:f2d77dee0a6bf145e04a74126d4b0aaaee015c29064a4bd029aae6eb5a5d931f"
   },
   "presentation": {
     "display_name_i18n": {
@@ -117,6 +120,7 @@
       "zh-CN": "使用 Kindle Pilot 管理 Kindle，按兼容清单推进并逐项回读设备状态。",
       "en-US": "Use Kindle Pilot to manage a Kindle through compatibility checks and explicit device readback."
     },
-    "home_shortcuts": []
+    "home_shortcuts": [],
+    "icon_ref": "assets/branding/kindle-pilot-logo.png"
   }
 }

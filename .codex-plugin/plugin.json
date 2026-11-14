@@ -1,6 +1,6 @@
 {
   "name": "kindle-pilot",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Agent-guided Kindle setup, reading configuration, and library maintenance.",
   "author": {
     "name": "Gaofeng"
@@ -28,6 +28,8 @@
       "管理已连接的 Kindle，先核对兼容性再继续。",
       "优化原生 Kindle 合集，保留书库并逐项回读。",
       "开启临时无线维护，继续上次的 Kindle 任务。"
-    ]
+    ],
+    "logo": "./assets/branding/kindle-pilot-logo.png",
+    "composerIcon": "./assets/branding/kindle-pilot-logo.png"
   }
 }
