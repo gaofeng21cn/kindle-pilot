@@ -1,6 +1,6 @@
 {
   "name": "kindle-pilot",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Agent-guided Kindle setup, reading configuration, and library maintenance.",
   "author": {
     "name": "Gaofeng"
