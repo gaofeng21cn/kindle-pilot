@@ -260,7 +260,7 @@ plugin:start_pairing()
             self.assertEqual(self.exchange(port)[:2], ["KINDLEPILOT/PAIR1", "OK"])
             process.wait(timeout=4)
             deadline = time.monotonic() + 3
-            while time.monotonic() < deadline and (base / "session.id").exists():
+            while time.monotonic() < deadline and (base / "status").read_text() != "STATE=stopped\n":
                 time.sleep(0.02)
             self.assertFalse((base / "session.id").exists())
             self.assertFalse((base / "settings/SSH/authorized_keys").exists())
