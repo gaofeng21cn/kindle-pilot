@@ -15,7 +15,8 @@ local function quote(value)
 end
 
 local function run(command)
-    return os.execute(command) == 0
+    local result, kind, code = os.execute(command)
+    return result == 0 or (result == true and kind == "exit" and code == 0)
 end
 
 local function read_line(command)
