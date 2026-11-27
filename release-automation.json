@@ -1,12 +1,5 @@
 {
   "strategy": "daily_patch",
-  "prepare": [
-    [
-      "python3",
-      "scripts/check-package.py",
-      "--write-lock"
-    ]
-  ],
   "verify": [
     [
       "python3",

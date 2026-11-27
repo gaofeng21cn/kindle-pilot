@@ -23,8 +23,8 @@ class CapabilityCatalogTests(unittest.TestCase):
             result = capability_info(ROOT)
         package = json.loads((ROOT / "opl-package.json").read_text())
         ids = [module["id"] for module in result["modules"]]
-        self.assertEqual(ids, package["exports"]["core_module_ids"])
-        self.assertEqual(result["capability_abi"], package["capability_abi"])
+        self.assertEqual(ids, package["provides"]["module_ids"])
+        self.assertEqual(result["capability_abi"]["id"], package["provides"]["module_ids"][0])
         self.assertEqual(result["device_status"], "not_checked")
         self.assertEqual(result["account_status"], "human_confirmation_required")
 
@@ -44,7 +44,7 @@ class CapabilityCatalogTests(unittest.TestCase):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / relative).read_bytes())
             package = json.loads((root / "opl-package.json").read_text())
-            package["exports"]["core_module_ids"] = ["drifted"]
+            package["provides"]["module_ids"] = ["drifted"]
             (root / "opl-package.json").write_text(json.dumps(package))
             with self.assertRaises(CompanionError) as raised:
                 load_capability_catalog(root)

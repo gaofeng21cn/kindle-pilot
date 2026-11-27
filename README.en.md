@@ -40,7 +40,7 @@ After the initial setup is verified, keep the Kindle and host on the same LAN. I
 
 ## Install and develop
 
-OPL application management uses the native Codex plugin carrier, with Package/CLI ID `kindle-pilot` and selector `kindle-pilot@kindle-pilot`. Official artifacts own published versions; a source checkout is an explicit development path. Updating or uninstalling the host plugin does not remove Kindle books, device plugins, backups, or task files.
+OPL application management uses OPL Framework v2 (`opl pack install` / `opl pack inspect` / `opl pack update`) with canonical root manifest `opl-package.json` (`opl.package.v2`), Package/CLI ID `kindle-pilot`, and `bin/kindle-pilot`. Official OCI artifacts own published versions; a source checkout is an explicit development path. Updating or uninstalling the package does not remove Kindle books, device plugins, backups, or task files.
 
 ```sh
 PYTHONPATH=src python3 -m kindle_companion --json software-info

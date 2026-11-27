@@ -1,6 +1,6 @@
 # KindlePilot 标准能力
 
-KindlePilot 现在以一个 Package 能力目录统一暴露装机、阅读、传输、合集和无线维护。能力目录位于 [`capabilities/kindle-pilot.json`](../capabilities/kindle-pilot.json)，`opl-package.json#/exports/core_module_ids` 与它保持同一顺序；Agent 可以通过下面的只读入口发现能力，而不需要探测设备或读取任务文件：
+KindlePilot 现在以一个 Package 能力目录统一暴露装机、阅读、传输、合集和无线维护。能力目录位于 [`capabilities/kindle-pilot.json`](../capabilities/kindle-pilot.json)，`opl-package.json#/provides/module_ids` 与它保持同一顺序；Agent 可以通过下面的只读入口发现能力，而不需要探测设备或读取任务文件：
 
 ```sh
 PYTHONPATH=src python3 -m kindle_companion --json capabilities
