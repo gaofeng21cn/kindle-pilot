@@ -2,7 +2,7 @@
   "schema_version": "opl.package.v2",
   "identity": {
     "id": "kindle-pilot",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "intent": "extension",
     "name": {
       "zh-CN": "Kindle Pilot",
