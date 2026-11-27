@@ -90,20 +90,18 @@ $kindle-pilot 我的 Kindle 配对码是 005219，帮我检查阅读环境和书
 
 ### 统一应用管理
 
-软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`。产品名称、版本及原生载体由 `opl-package.json` 与 Codex 插件声明共同验证。装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记为 Package 能力模块。
+软件正式名称为 **Kindle Pilot**，稳定 Package ID 和命令名为 `kindle-pilot`。产品名称、版本、提供模块与 CLI 入口以根 [`opl-package.json`](opl-package.json)（`opl.package.v2`）为准；装机、MTP、阅读环境、账号交接、原生合集、无线维护和书库保护统一登记在 `provides.module_ids` 与 `capabilities/kindle-pilot.json` 中。
 
-OPL 应用管理复用 Codex 插件管理器安装、更新、启停和卸载，不复制安装数据库。仓库提供 `.agents/plugins/marketplace.json`，插件选择器为 `kindle-pilot@kindle-pilot`；现有 Skill、兼容清单和 CLI 随同一个插件交付。正式软件源使用版本固定的 OPL Package 制品，`latest-stable` 只用于发现已发布版本；设备、固件和阅读账号的实际可用性继续按各自工作流验收。
+OPL 应用管理通过 Framework v2 `opl pack` 生命周期（`opl pack install` / `opl pack inspect` / `opl pack update` / `opl pack uninstall`）管理安装、更新与卸载，不复制安装数据库，也不依赖已退役的 `.agents/plugins/marketplace.json` 或 `.codex-plugin/plugin.json`；现有 Skill、兼容清单和 CLI（`bin/kindle-pilot`）随同一 Package 交付。正式软件源使用发布于 GHCR 的版本化 OPL Package 制品，`latest-stable` 只用于发现已发布版本；设备、固件和阅读账号的实际可用性继续按各自工作流验收。
 
-在支持原生插件管理的 Codex 中，可添加 `gaofeng21cn/kindle-pilot` marketplace 后安装该插件。需要验证本地源码时，可以把仓库路径作为 marketplace source。更新由同一 marketplace 更新和插件管理器完成；每次操作后用 `codex plugin list --json` 回读实际插件版本与启用状态。卸载只移除插件及其缓存，不删除 Kindle 上的书籍、插件、设备备份或用户任务文件。
-
-从已安装插件根目录或源码根目录读取软件信息和能力目录：
+从当前 Package 根目录、已安装副本或全局 CLI 读取软件信息和能力目录：
 
 ~~~sh
 PYTHONPATH=src python3 -m kindle_companion --json software-info
 PYTHONPATH=src python3 -m kindle_companion --json capabilities
 ~~~
 
-这两个入口只读取 Package 身份和标准能力目录，`device_status=not_checked`；设备状态继续由原工作流检查。能力模块和验收边界见[标准能力](docs/CAPABILITIES.md)。直接安装的 Python CLI 仍可单独使用，但它不是 Codex 插件安装记录。
+这两个入口只读取 Package 身份和标准能力目录，`device_status=not_checked`；设备状态继续由原工作流检查。能力模块和验收边界见[标准能力](docs/CAPABILITIES.md)。直接运行源码 CLI 仍可用于开发调试，正式软件安装与更新以 OPL Package 记录为准。
 
 ### 开发入口
 
@@ -125,7 +123,7 @@ python3 scripts/check-package.py
 
 这些检查覆盖主机工具；KC 集成检查需要把清单中校验通过的发布包路径设为 `KINDLE_KC_ARCHIVE`，CI 会准备此文件。设备安装、应用加载和账号阅读分别在实际使用中验收。
 
-正式发布先通过上述检查，再将 annotated `v<version>` tag 绑定到精确 owner 提交。Framework 从该提交生成并校验目录、文件摘要和载荷，使用其 `publish-package.yml` 发布不可变版本并推进 `latest-stable`；目录版本、tag 和制品来源必须一致。仓库源码 marketplace 仍可用于开发接入，不能代替正式制品回读。
+正式发布先通过上述检查，再将 annotated `v<version>` tag 绑定到精确 owner 提交。Framework 从该提交以 `opl.package.v2` 契约构建并发布不可变 OCI Package 制品到 GHCR 并推进 `latest-stable`；Package 清单版本、tag 和制品来源必须一致。源码 checkout 可用于本地开发验证（`opl pack inspect . --json`），不能代替正式制品回读。
 
 ## 来源与许可
 

@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Run Kindle Pilot from a source or OPL Package checkout."""
+
+import sys
+from pathlib import Path
+
+
+root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / "src"))
+
+from kindle_companion.cli import main
+
+
+raise SystemExit(main())
